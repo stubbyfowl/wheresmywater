@@ -1,0 +1,38 @@
+# Publishes ./site to GitHub Pages.
+#
+# Pages' built-in "deploy from a branch" option only accepts / or /docs as a
+# source, and moving the site to the repo root would collide with the raw
+# data/ download directory. Deploying the subdirectory through Actions keeps
+# site/ named for what it is.
+name: Deploy site to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check lookup geometry
+        run: node site/test.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+      - id: deployment
+        uses: actions/deploy-pages@v4
