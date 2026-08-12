@@ -785,6 +785,188 @@ function onKeyDown(e) {
   }
 }
 
+/* ---------- use my location ---------- */
+
+/*
+ * Reverse-geocode only to put a human-readable label on the result. The
+ * lookup itself uses the raw coordinates, so if this call fails the answer
+ * is still correct, it just says "your location" instead of a town name.
+ */
+async function describeCoords(lat, lon) {
+  try {
+    const r = await fetch(`${PHOTON}reverse?lat=${lat}&lon=${lon}&limit=1&lang=en`);
+    if (!r.ok) throw new Error("reverse-failed");
+    const f = (await r.json()).features[0];
+    const { line1, line2 } = labelFor((f && f.properties) || {});
+    return [line1, line2].filter(Boolean).join(", ") || "your location";
+  } catch {
+    return "your location";
+  }
+}
+
+function useMyLocation() {
+  const status = document.getElementById("location-status");
+  if (!navigator.geolocation) {
+    status.textContent = "This browser can't share a location.";
+    return;
+  }
+  status.textContent = "Asking your device…";
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      status.textContent = "";
+      setBusy(true, "Finding water near you…");
+      try {
+        const d = await loadData();
+        const matched = await describeCoords(lat, lon);
+        render(lookup({ lat, lon, matched, approximate: true }, d));
+        results.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch {
+        results.innerHTML = `<p class="status error">Something went wrong. Try typing an address instead.</p>`;
+      } finally {
+        setBusy(false);
+      }
+    },
+    (err) => {
+      // Permission denied is a choice, not a fault: say what to do next
+      // rather than showing a bare error.
+      status.textContent =
+        err.code === err.PERMISSION_DENIED
+          ? "Location blocked. Type an address instead, or allow location in your browser settings."
+          : "Couldn't get your location. Type an address instead.";
+    },
+    { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+  );
+}
+
+/* ---------- browse ---------- */
+
+function renderBrowse(haulers, { city, confidence, q }) {
+  const needle = (q || "").trim().toLowerCase();
+  return (haulers || []).filter(
+    (h) =>
+      (!city || h.city === city) &&
+      (!confidence || h.confidence === confidence) &&
+      (!needle || `${h.name} ${h.city}`.toLowerCase().includes(needle))
+  );
+}
+
+function browseMarkup(rows) {
+  if (!rows.length) {
+    return `<p class="status">Nothing matches that. Try clearing a filter.</p>`;
+  }
+  return `
+    <table class="browse-table">
+      <thead>
+        <tr><th scope="col">Name</th><th scope="col">Based in</th>
+            <th scope="col">Phone</th><th scope="col">Confidence</th></tr>
+      </thead>
+      <tbody>
+        ${rows
+          .map(
+            (h) => `
+          <tr>
+            <td>${esc(h.name)}</td>
+            <td>${esc(h.city || "—")}</td>
+            <td>${
+              h.phone
+                ? `<a href="tel:${esc(h.phone.replace(/[^\d+]/g, ""))}">${esc(h.phone)}</a>`
+                : "—"
+            }</td>
+            <td><span class="badge-conf ${h.confidence}">${
+              h.confidence === "high" ? "Likely" : "Possible"
+            }</span></td>
+          </tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>`;
+}
+
+async function initBrowse() {
+  const wrap = document.getElementById("browse-results");
+  const citySel = document.getElementById("browse-city");
+  const confSel = document.getElementById("browse-conf");
+  const qInput = document.getElementById("browse-q");
+  const countEl = document.getElementById("browse-count");
+  if (!wrap) return;
+
+  const d = await loadData();
+  const haulers = d.haulers.slice().sort((a, b) => a.name.localeCompare(b.name));
+
+  [...new Set(haulers.map((h) => h.city).filter(Boolean))]
+    .sort()
+    .forEach((c) => citySel.add(new Option(c, c)));
+
+  const draw = () => {
+    const rows = renderBrowse(haulers, {
+      city: citySel.value,
+      confidence: confSel.value,
+      q: qInput.value,
+    });
+    wrap.innerHTML = browseMarkup(rows);
+    countEl.textContent = `${rows.length} of ${haulers.length}`;
+  };
+
+  citySel.addEventListener("change", draw);
+  confSel.addEventListener("change", draw);
+  qInput.addEventListener("input", draw);
+  draw();
+}
+
+/* ---------- feedback ---------- */
+
+// Built as plain text so the person can see exactly what they're sending
+// before it leaves their machine. There is no server to post it to, which
+// is deliberate: no backend means nothing to secure and nothing to leak.
+function feedbackBody(v) {
+  return [
+    `What: ${v.kind}`,
+    `Name: ${v.name || "(not given)"}`,
+    `Area: ${v.where || "(not given)"}`,
+    `Contact: ${v.contact || "(not given)"}`,
+    "",
+    "Details:",
+    v.detail || "(none)",
+    "",
+    `Reply to: ${v.you || "(not given)"}`,
+  ].join("\n");
+}
+
+function initFeedback() {
+  const fb = document.getElementById("feedback-form");
+  if (!fb) return;
+  const status = document.getElementById("fb-status");
+  const read = () => ({
+    kind: fb.kind.value,
+    name: fb.name.value,
+    where: fb.where.value,
+    contact: fb.contact.value,
+    detail: fb.detail.value,
+    you: fb.you.value,
+  });
+
+  fb.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = read();
+    const subject = `Water source: ${v.name || v.where || "suggestion"}`;
+    window.location.href =
+      `mailto:sidaksmann@gmail.com?subject=${encodeURIComponent(subject)}` +
+      `&body=${encodeURIComponent(feedbackBody(v))}`;
+  });
+
+  document.getElementById("fb-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(feedbackBody(read()));
+      status.textContent = "Copied. Paste it into an email to sidaksmann@gmail.com.";
+    } catch {
+      status.textContent =
+        "Couldn't copy automatically. Select the text in the boxes and copy it manually.";
+    }
+  });
+}
+
 /* ---------- events ---------- */
 
 function init() {
@@ -815,6 +997,12 @@ function init() {
     pickedSuggestion = null;
     form.requestSubmit();
   });
+  document.getElementById("use-location").addEventListener("click", useMyLocation);
+
+  initFeedback();
+  // Browse needs the hauler data, so it loads itself rather than waiting
+  // for a search. It's the cheapest file we ship.
+  initBrowse();
 }
 
 if (typeof document !== "undefined") init();
@@ -822,5 +1010,5 @@ if (typeof document !== "undefined") init();
 export {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
   communityFor, nameOf, pwsidOf, lookup, nearestOsm, lookupContext,
-  nearestHaulers, mapEmbedSrc, labelFor,
+  nearestHaulers, mapEmbedSrc, labelFor, renderBrowse, feedbackBody,
 };

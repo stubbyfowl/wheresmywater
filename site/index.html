@@ -19,9 +19,11 @@
     <span class="brand-name">Where's My Water</span>
   </a>
   <nav aria-label="Main">
-    <a href="#how">How it works</a>
+    <a href="#browse">Browse</a>
+    <a href="#guide">What to do</a>
     <a href="#why">Why this exists</a>
-    <a href="#data">Where the data comes from</a>
+    <a href="#feedback">Add a source</a>
+    <a href="#data">Data</a>
   </nav>
 </header>
 
@@ -58,6 +60,12 @@
           </div>
           <button type="submit" id="submit-btn">Find water</button>
         </div>
+        <p class="or-row">
+          <button type="button" id="use-location" class="btn-location">
+            <span aria-hidden="true">📍</span> Use my location
+          </button>
+          <span class="or-note" id="location-status" role="status"></span>
+        </p>
         <p id="address-help" class="help">
           A town or crossroads works, it doesn't have to be an exact address.
           We don't store it, the lookup happens in your browser.
@@ -74,7 +82,225 @@
   <!-- Results get rendered here by script.js -->
   <section id="results" class="results" aria-live="polite" aria-busy="false"></section>
 
-  <section id="how" class="band">
+  <section id="stakes" class="band band-alt">
+    <p class="eyebrow">The scale of it</p>
+    <h2>Arizona water, in three numbers</h2>
+    <div class="stats">
+      <div class="stat-card">
+        <span class="stat-n">476</span>
+        <p class="stat-l">of Arizona's 1,490 active public water systems have an
+        <strong>unresolved</strong> drinking-water violation on record.</p>
+        <p class="stat-src">EPA Safe Drinking Water Information System, data current to July 2026.
+        Counted by this site from EPA's own bulk records.</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-n">72%</span>
+        <p class="stat-l">of Arizona's water systems serve <strong>fewer than 500 people</strong>.
+        Small systems have the least money for treatment and testing.</p>
+        <p class="stat-src">1,074 of 1,490 active systems. EPA SDWIS, July 2026.</p>
+      </div>
+      <div class="stat-card">
+        <span class="stat-n">0</span>
+        <p class="stat-l">official statewide lists of water haulers. No Arizona
+        agency publishes one, which is the reason this site exists.</p>
+        <p class="stat-src">Hauling is permitted county by county
+        (A.A.C. R18-4-125); those permit lists are not published online.</p>
+      </div>
+    </div>
+    <p class="band-lede" style="margin-top:1.5rem">
+      A violation is not automatically a health emergency, and most are
+      monitoring or reporting failures rather than contamination. But
+      "unresolved" means the system has not yet returned to compliance.
+    </p>
+  </section>
+
+  <section id="guide" class="band">
+    <p class="eyebrow">Practical steps</p>
+    <h2>What to do</h2>
+    <p class="band-lede">
+      Finding a water source is one problem. Knowing what to actually do is
+      another, and nobody hands you instructions. Start with the situation
+      that matches yours.
+    </p>
+
+    <div class="guide-grid">
+      <details class="guide-item" open>
+        <summary><strong>My water is out right now</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>Search your address above and call the haulers listed. Ask
+            about emergency or same-day delivery, and confirm they serve your
+            road, not just your town.</li>
+            <li>Standpipes usually are not walk-up. EPCOR's Rio Verde
+            Foothills station needs an account and a PIN before you can draw
+            water, so signing up is step one, not step two.</li>
+            <li>If you cannot reach anyone, call your <strong>county emergency
+            management office</strong>. They coordinate water assistance during
+            outages and can point to bulk distribution if it exists.</li>
+            <li>For drinking in the meantime, bottled water from any store is
+            safe. Do not drink from a well or a tank you suspect is
+            contaminated.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>I rely on hauled water</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>Know your tank size and roughly how many days it lasts. Order
+            before you are near empty, since haulers schedule days ahead and
+            demand spikes in summer.</li>
+            <li>Ask any hauler whether they carry <strong>potable</strong>
+            water specifically. Construction water and dust-control water are
+            hauled by the same kind of truck and are not for drinking.</li>
+            <li>Ask where they source from. A hauler drawing from a permitted
+            public system is drawing water that gets tested.</li>
+            <li>Keep a second hauler's number. Single-supplier dependence is
+            exactly what went wrong in Rio Verde Foothills in 2023.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>I have a private well</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>Nobody tests your well for you. Private wells are outside EPA
+            and ADEQ drinking-water rules, so testing is on the owner.</li>
+            <li>Test at least annually for bacteria and nitrate, and in
+            Arizona also consider arsenic, fluoride and uranium, which occur
+            naturally in some aquifers here. Use an ADHS-licensed lab.</li>
+            <li>Look up your well in ADWR's registry to confirm depth and
+            construction details before you assume anything about it.</li>
+            <li>If the water level is dropping, note it. Regional decline
+            shows up in the well and subsidence data this site reports as
+            background context.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>I'm buying property without a water connection</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>Search the address here first. If no provider serves it, no
+            utility is obligated to bring water to that lot, ever.</li>
+            <li>Ask specifically whether the parcel has a
+            <strong>100-year assured water supply determination</strong>. Lots
+            split without one are how Rio Verde Foothills happened.</li>
+            <li>Get the well's actual production rate in writing, not the
+            seller's description of it.</li>
+            <li>Price hauled water into your monthly costs before you buy, not
+            after.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>My tap water looks, smells or tastes wrong</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>If you have a provider, look up its record above, then request
+            its <strong>Consumer Confidence Report</strong>. Every community
+            water system must give you one and it lists what was detected.</li>
+            <li>Report the problem to your provider first and write down when
+            you reported it.</li>
+            <li>If they do not respond, ADEQ's Safe Drinking Water Program
+            takes complaints about public water systems.</li>
+            <li>Discoloured water after main work is usually sediment.
+            Persistent taste, smell or illness is worth escalating rather than
+            waiting out.</li>
+          </ol>
+        </div>
+      </details>
+    </div>
+
+    <p class="caveat" style="margin-top:1.5rem">
+      This is general guidance assembled from public sources, not legal,
+      medical or engineering advice. When something here conflicts with what
+      your provider, your county, or a licensed professional tells you about
+      your specific situation, believe them, not this page.
+    </p>
+  </section>
+
+  <section id="browse" class="band band-alt">
+    <p class="eyebrow">No address needed</p>
+    <h2>Browse every source we know about</h2>
+    <p class="band-lede">
+      The full statewide list, unfiltered by distance. Useful if you want to
+      see what exists in a county, or check whether a company you were given
+      is in the federal records at all.
+    </p>
+    <div class="browse-controls">
+      <label for="browse-city">City</label>
+      <select id="browse-city"><option value="">All cities</option></select>
+      <label for="browse-conf">Confidence</label>
+      <select id="browse-conf">
+        <option value="">All</option>
+        <option value="high">Likely water haulers</option>
+        <option value="low">Possible, unconfirmed</option>
+      </select>
+      <label for="browse-q">Search</label>
+      <input type="search" id="browse-q" placeholder="name or city">
+      <span id="browse-count" class="browse-count" role="status"></span>
+    </div>
+    <div id="browse-results" class="browse-results"></div>
+  </section>
+
+  <section id="feedback" class="band">
+    <p class="eyebrow">Help us fix this</p>
+    <h2>Add or correct a water source</h2>
+    <p class="band-lede">
+      No agency keeps this list, so it gets better only when people who know
+      the ground tell us. If a hauler here has closed, a phone number is
+      wrong, or you know a source we're missing, that is genuinely useful.
+    </p>
+    <form id="feedback-form" class="feedback-form">
+      <div class="field">
+        <label for="fb-kind">What is this about?</label>
+        <select id="fb-kind" name="kind">
+          <option>A water source you're missing</option>
+          <option>A listing that's wrong or out of date</option>
+          <option>A business that has closed</option>
+          <option>Something else</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fb-name">Name of the business or place</label>
+        <input type="text" id="fb-name" name="name" placeholder="e.g. Example Water Hauling LLC">
+      </div>
+      <div class="field">
+        <label for="fb-where">Town or area it serves</label>
+        <input type="text" id="fb-where" name="where" placeholder="e.g. Dolan Springs, Mohave County">
+      </div>
+      <div class="field">
+        <label for="fb-contact">Their phone or website <span class="opt">(if you have it)</span></label>
+        <input type="text" id="fb-contact" name="contact">
+      </div>
+      <div class="field full">
+        <label for="fb-detail">What do you know about it?</label>
+        <textarea id="fb-detail" name="detail" rows="4"
+          placeholder="Do they haul potable water? Do they deliver to your road? Have you used them?"></textarea>
+      </div>
+      <div class="field full">
+        <label for="fb-you">Your email <span class="opt">(optional, only so we can ask a follow-up)</span></label>
+        <input type="email" id="fb-you" name="you">
+      </div>
+      <div class="field full form-actions">
+        <button type="submit">Send it</button>
+        <button type="button" class="btn-outline" id="fb-copy">Copy instead</button>
+      </div>
+      <p class="caveat full" id="fb-status" role="status">
+        This opens your email app with the details filled in, so nothing is
+        submitted to a server and you can see exactly what gets sent. If your
+        email app doesn't open, use "Copy instead" and paste it into a message
+        to <a href="mailto:sidaksmann@gmail.com">sidaksmann@gmail.com</a>.
+      </p>
+    </form>
+  </section>
+
+  <section id="how" class="band band-alt">
     <h2>How it works</h2>
     <ol class="steps">
       <li>
@@ -96,7 +322,7 @@
     </ol>
   </section>
 
-  <section id="why" class="band band-alt">
+  <section id="why" class="band">
     <div class="why-grid">
       <div>
         <h2>Why this exists</h2>

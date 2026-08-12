@@ -326,6 +326,86 @@ button {
 .sources .src { font: 500 .8125rem/1.4 var(--mono); color: var(--aquifer); margin-bottom: .5rem; }
 .sources p:last-child { font-size: .9375rem; color: var(--ink-soft); margin: 0; }
 
+/* ---------- use my location ---------- */
+
+.or-row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin: .875rem 0 0; }
+.btn-location {
+  padding: .625rem 1rem; background: #fff; color: var(--aquifer);
+  border: 1.5px solid var(--aquifer); font-size: .9375rem;
+}
+.btn-location:hover { background: var(--aquifer); color: #fff; }
+.or-note { font-size: .875rem; color: var(--ink-soft); }
+
+/* ---------- stakes ---------- */
+
+.stats { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.stat-card { background: var(--paper); border-radius: var(--radius); padding: 1.5rem; border-top: 3px solid var(--clay-rust); }
+.stat-n {
+  display: block; font-family: var(--serif); font-weight: 700;
+  font-size: clamp(2.5rem, 6vw, 3.5rem); line-height: 1; color: var(--clay-rust);
+  margin-bottom: .625rem;
+}
+.stat-l { font-size: 1rem; margin-bottom: .75rem; }
+.stat-src { font-size: .8125rem; color: var(--ink-soft); margin: 0; }
+
+/* ---------- guide ---------- */
+
+.guide-grid { display: grid; gap: .75rem; }
+.guide-item { border: 1px solid var(--rule); border-radius: var(--radius); background: #fff; }
+.guide-item summary {
+  padding: 1.125rem 1.375rem; cursor: pointer; list-style: none;
+  display: flex; justify-content: space-between; gap: 1rem; font-size: 1.0625rem;
+}
+.guide-item summary::-webkit-details-marker { display: none; }
+.guide-item summary::after { content: "+"; font: 400 1.25rem/1 var(--mono); color: var(--ink-soft); }
+.guide-item[open] summary::after { content: "−"; }
+.guide-item[open] summary { border-bottom: 1px solid var(--rule); }
+.guide-body { padding: 1.125rem 1.375rem; }
+.guide-body ol { margin: 0; padding-left: 1.25rem; display: grid; gap: .625rem; }
+.guide-body li { color: var(--ink-soft); }
+.guide-body li strong { color: var(--ink); }
+
+/* ---------- browse ---------- */
+
+.browse-controls {
+  display: flex; align-items: center; gap: .625rem 1rem; flex-wrap: wrap;
+  margin-bottom: 1.25rem; padding: 1rem; background: var(--paper); border-radius: var(--radius);
+}
+.browse-controls label { font: 500 .8125rem/1 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); }
+.browse-controls select, .browse-controls input {
+  padding: .5rem .625rem; font: inherit; font-size: .9375rem;
+  border: 1.5px solid var(--rule); border-radius: 6px; background: #fff; color: var(--ink);
+}
+.browse-count { margin-left: auto; font: 500 .8125rem/1 var(--mono); color: var(--ink-soft); }
+.browse-results { overflow-x: auto; }
+.browse-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--radius); overflow: hidden; }
+.browse-table th, .browse-table td { padding: .75rem .875rem; text-align: left; border-bottom: 1px solid var(--rule); font-size: .9375rem; }
+.browse-table th { font: 500 .75rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-soft); background: var(--sand); }
+.browse-table tr:last-child td { border-bottom: 0; }
+
+/* ---------- feedback ---------- */
+
+.feedback-form {
+  display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  background: var(--sand); padding: 1.5rem; border-radius: var(--radius);
+}
+.field { display: grid; gap: .375rem; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-weight: 600; font-size: .9375rem; }
+.field .opt { font-weight: 400; color: var(--ink-soft); }
+.field input, .field select, .field textarea {
+  padding: .625rem .75rem; font: inherit; font-size: .9375rem;
+  border: 1.5px solid var(--rule); border-radius: 6px; background: #fff; color: var(--ink);
+  width: 100%;
+}
+.field textarea { resize: vertical; }
+.form-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+.form-actions button[type="submit"] {
+  padding: .75rem 1.5rem; background: var(--aquifer); color: #fff;
+}
+.form-actions button[type="submit"]:hover { background: #17494C; }
+.feedback-form .caveat { grid-column: 1 / -1; }
+
 /* ---------- footer ---------- */
 
 .site-footer { background: var(--bedrock); color: #CFC7B8; margin-top: 2rem; }

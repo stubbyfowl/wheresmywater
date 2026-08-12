@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
   communityFor, nameOf, pwsidOf, nearestOsm, lookupContext,
-  nearestHaulers, mapEmbedSrc, labelFor, lookup,
+  nearestHaulers, mapEmbedSrc, labelFor, lookup, renderBrowse, feedbackBody,
 } from "./script.js";
 
 const square = [[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]];
@@ -146,5 +146,29 @@ assert.deepEqual(
   labelFor({ name: "Dolan Springs", city: "Dolan Springs", state: "Arizona", postcode: "86441" }),
   { line1: "Dolan Springs", line2: "Arizona, 86441" }
 );
+
+// Browse filters combine rather than override each other.
+const all = [
+  { name: "Kingman Water Hauling", city: "Kingman", confidence: "high" },
+  { name: "Kingman Maybe Water", city: "Kingman", confidence: "low" },
+  { name: "Payson Water Trucks", city: "Payson", confidence: "high" },
+];
+assert.equal(renderBrowse(all, {}).length, 3, "no filters -> everything");
+assert.equal(renderBrowse(all, { city: "Kingman" }).length, 2, "city filter");
+assert.equal(
+  renderBrowse(all, { city: "Kingman", confidence: "high" }).length, 1,
+  "city AND confidence both apply"
+);
+assert.equal(renderBrowse(all, { q: "payson" }).length, 1, "search is case-insensitive");
+assert.equal(renderBrowse(all, { q: "  PAYSON " }).length, 1, "search trims whitespace");
+assert.equal(renderBrowse(all, { q: "nonesuch" }).length, 0, "no match -> empty");
+assert.equal(renderBrowse(undefined, {}).length, 0, "missing data -> empty, not a crash");
+
+// The feedback body must survive empty fields rather than emitting
+// "undefined" into someone's email.
+const body = feedbackBody({ kind: "A water source you're missing", name: "", detail: "" });
+assert.ok(!body.includes("undefined"), "no undefined leaks into the message");
+assert.ok(body.includes("(not given)"), "blank fields are labelled");
+assert.ok(feedbackBody({ kind: "x", detail: "hauls potable" }).includes("hauls potable"));
 
 console.log("all geometry checks passed");
