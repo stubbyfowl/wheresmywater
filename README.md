@@ -1,65 +1,87 @@
-# Where's My Water AZ — data pipeline
+# Where's My Water
 
-Real, working ADWR data sources for the v1 lookup (Rio Verde Foothills area),
-verified live on 2026-07-27 by querying ADWR's ArcGIS REST catalog directly.
+Type an Arizona address, find out where to actually get water.
 
-## Verified sources
+**Live:** https://stubbyfowl.github.io/wheresmywater/
 
-| Dataset | Access method | URL |
-|---|---|---|
-| AMA / INA boundaries | Live ArcGIS FeatureServer query (point-in-polygon) | `https://azwatermaps.azwater.gov/arcgis/rest/services/General/AMA_and_INA_2024/FeatureServer/0` |
-| AAWS Issued Determinations | AZGeo Open Data Hub, `.geojson` download | `https://gisdata2016-11-18t150447874z-azwater.opendata.arcgis.com/datasets/azwater::aaws-issued-determination-2024.geojson` |
-| Community Water System service areas | AZGeo Open Data Hub, `.geojson` download | `https://gisdata2016-11-18t150447874z-azwater.opendata.arcgis.com/datasets/azwater::cws-service-area-1.geojson` |
-| GWSI well registry (Wells55) | Direct zip from azwater.gov | `https://www.azwater.gov/sites/default/files/zip/GWSI_ZIP_20260714.zip` |
-| InSAR land subsidence | Direct zip from azwater.gov | `https://www.azwater.gov/sites/default/files/zip/ArizonaActiveLandSubsidenceAreas_05-2026.zip` |
+Most water tools tell you about policy. This one tries to answer the
+question someone actually has when their tap situation is uncertain: *where
+do I go, right now?* Results come in three tiers:
 
-The last two are dated in their filename and ADWR refreshes them periodically —
-if a link 404s later, get the current one from
-[azwater.gov/gis-data-and-maps](https://www.azwater.gov/gis-data-and-maps).
+1. **Places to get water** — standpipes and haulers, hand-researched,
+   because no government agency maintains this list anywhere.
+2. **Your official provider** — and its EPA drinking-water violation
+   record. If no provider serves your address, the site says so plainly;
+   for places like Rio Verde Foothills that is the whole story.
+3. **Regulatory context** — AMA status, nearby wells, 100-year supply
+   determinations. Background, collapsed by default.
 
-There's also a live ADWR public records request web form at
-`https://app.azwater.gov/eforms/Forms/Request/DWR_Request.aspx`, separate from
-the emailed A.R.S. § 39-121 request — worth using as a second channel if the
-emailed request stalls.
+It currently covers **Rio Verde Foothills**, the unincorporated community
+that Scottsdale cut off from hauled water on January 1, 2023.
 
-## Files
+## How it's built
 
-- `fetch_data.py` — downloads/queries all five datasets, clipped to a Rio
-  Verde Foothills bounding box, saves to `./data/`.
-- `check_address.py` — the core product logic. Geocodes an address with the
-  free Census Bureau geocoder (no API key needed), then runs point-in-polygon
-  checks against AMA/INA, AAWS, and CWS layers, plus a nearby-well count from
-  GWSI. Run directly for a CLI test: `python check_address.py "<address>"`.
-- `app.py` — minimal FastAPI backend exposing `GET /check?address=...`. This
-  is what `script.js`'s `mockLookup()` should call once deployed, instead of
-  generating fake data.
-- `requirements.txt` — no GDAL/fiona dependency; uses `pyogrio` as the
-  geopandas I/O engine so it installs cleanly with plain `pip install`.
+The lookup runs **entirely in the browser**. There's no backend: the page
+geocodes your address, then does point-in-polygon against small static
+JSON files. That means no server to pay for, and your address is never
+sent to us.
+
+```
+fetch_data.py       downloads raw ADWR data (~450MB) -> data/
+build_site_data.py  trims it to what the browser needs -> site/data/ (~1.4MB)
+site/               the actual website, deployed to GitHub Pages
+app.py              optional FastAPI version of the lookup, for local use
+```
 
 ## Running it
 
 ```bash
 pip install -r requirements.txt
-python fetch_data.py          # pulls real ADWR data into ./data
-python check_address.py "28900 N Pinnacle Ranch Rd, Rio Verde, AZ 85263"
-uvicorn app:app --reload      # serve the API locally
+python fetch_data.py          # real ADWR data, takes a while
+python build_site_data.py     # -> site/data/*.json
+node site/test.mjs            # check the lookup geometry
+cd site && python -m http.server 8080
 ```
 
-## What's not done yet
+The EPA violations layer needs a separate ~423MB download before
+`build_site_data.py` can include it:
 
-- **GWSI well loading is best-effort.** The GWSI zip ships as a set of
-  tables, and the exact column layout can vary by export. `load_wells()` in
-  `check_address.py` looks for a CSV/TXT with `LATITUDE`/`LONGITUDE` columns
-  and builds points from it — check the actual extracted files in
-  `./data/gwsi_wells/` after running `fetch_data.py` once and adjust the
-  column-matching logic if needed.
-- **Validation against known addresses** (playbook Step 3's last step):
-  before trusting this, manually cross-check ~10-15 known Rio Verde
-  Foothills addresses against ADWR's own AAWS interactive map
-  (`https://azwatermaps.azwater.gov/aaws`) and the AMA map to confirm the
-  automated results match.
-- **Not executed end-to-end here.** This sandbox's outbound network is
-  locked to package registries only (no live access to azwater.gov or
-  Census.gov), so this was built and syntax/import-checked but not run
-  against live data. Run it from your own machine, or from Claude Code once
-  the GitHub integration is wired up, to pull real data and validate output.
+```bash
+mkdir -p data/epa && curl -C - -o data/epa/SDWA_latest_downloads.zip \
+  https://echo.epa.gov/files/echodownloads/SDWA_latest_downloads.zip
+```
+
+## Data sources
+
+| Dataset | Access |
+|---|---|
+| AMA / INA boundaries | [ADWR ArcGIS FeatureServer](https://azwatermaps.azwater.gov/arcgis/rest/services/General/AMA_and_INA_2024/FeatureServer/0) |
+| AAWS issued determinations | AZGeo Open Data Hub `.geojson` |
+| Community Water System service areas | AZGeo Open Data Hub `.geojson` |
+| GWSI well registry | [Direct zip](https://www.azwater.gov/gis-data-and-maps) |
+| Land subsidence | [Direct zip](https://www.azwater.gov/gis-data-and-maps) |
+| Drinking-water violations | [EPA ECHO SDWA bulk download](https://echo.epa.gov/tools/data-downloads/sdwa-download-summary) |
+| Geocoding | U.S. Census Bureau geocoder |
+
+The two direct zips carry dates in their filenames and go stale; get
+current links from [azwater.gov/gis-data-and-maps](https://www.azwater.gov/gis-data-and-maps).
+
+## Things that will bite you
+
+- **AZGeo Hub downloads are asynchronous.** The first request returns a
+  small `{"status":"InProgress"}` blob, not data. `fetch_data.py` polls.
+- **The Hub ignores `outSR` for some layers** and serves EPSG:26912
+  regardless. Clipping those with a lat/lon bbox silently yields *zero*
+  features rather than an error. Always reproject before clipping.
+- **The Census geocoder sends no CORS header**, so browser `fetch()` is
+  blocked. The site uses JSONP.
+- **GWSI ships a shapefile**, not CSVs, at `Shape/GWSI_SITES.shp`.
+- **GWSI is not Wells55.** GWSI is the monitoring index; it undercounts
+  actual drilled wells badly. The displayed well count is a floor.
+
+## Caveats
+
+This is an independent project, not a government service and not
+affiliated with any utility. Directory entries show where each detail came
+from and when it was checked; entries not yet confirmed by phone say so.
+Always call before driving out.
