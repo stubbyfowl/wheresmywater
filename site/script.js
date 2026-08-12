@@ -96,13 +96,14 @@ async function grab(name, fallback) {
  */
 async function loadData() {
   if (data) return data;
-  const [directory, cws, osm, violations] = await Promise.all([
+  const [directory, cws, osm, violations, haulers] = await Promise.all([
     grab("directory.json", { communities: [] }),
     grab("cws.json", { features: [] }),
     grab("osm_water.json", []),
     grab("violations.json", {}),
+    grab("haulers.json", { haulers: [] }),
   ]);
-  data = { directory, cws, osm, violations };
+  data = { directory, cws, osm, violations, haulers: haulers.haulers || [] };
   return data;
 }
 
@@ -201,6 +202,41 @@ function nearestOsm(lat, lon, osm, limit = 6, maxMiles = 30) {
     .slice(0, limit);
 }
 
+/*
+ * Nearest candidate haulers.
+ *
+ * The radius is deliberately wide (default 75 miles) because haulers drive
+ * to you: their registered address is where the business is based, not the
+ * edge of a service area. A Kingman hauler may well serve Dolan Springs.
+ * High-confidence matches sort ahead of merely plausible ones at similar
+ * distance, since a wrong lead costs someone a phone call they didn't need.
+ */
+function nearestHaulers(lat, lon, haulers, limit = 8, maxMiles = 75) {
+  return (haulers || [])
+    .map((h) => ({
+      ...h,
+      miles: h.lat != null && h.lon != null ? milesBetween(lat, lon, h.lat, h.lon) : null,
+    }))
+    .filter((h) => h.miles == null || h.miles <= maxMiles)
+    .sort((a, b) => {
+      const rank = (h) => (h.confidence === "high" ? 0 : 1);
+      if (rank(a) !== rank(b)) return rank(a) - rank(b);
+      return (a.miles ?? Infinity) - (b.miles ?? Infinity);
+    })
+    .slice(0, limit);
+}
+
+// Strip punctuation and company suffixes so "Rio Verde Foothills Potable
+// Water Hauling, LLC" and "RIO VERDE FOOTHILLS POTABLE WATER HAULING LLC"
+// compare equal.
+function normalizeName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/\b(llc|inc|co|company|corp|ltd|lc|llp)\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 function lookup(loc, d) {
   const { lon, lat } = loc;
   const cwsFeature = findFeature(d.cws, lon, lat);
@@ -219,11 +255,23 @@ function lookup(loc, d) {
         .sort((a, b) => (a.miles ?? Infinity) - (b.miles ?? Infinity))
     : [];
 
+  // FMCSA independently finds companies that are already in the curated
+  // directory (it turns up Rio Verde Foothills Potable Water Hauling, for
+  // one). That's a useful cross-check, but showing the same business twice
+  // -- once verified, once as an unconfirmed lead -- reads as two options
+  // and undercuts the verified entry. The hand-checked record wins.
+  const curatedNames = places.map((p) => normalizeName(p.name));
+  const haulers = nearestHaulers(lat, lon, d.haulers).filter((h) => {
+    const n = normalizeName(h.name);
+    return !curatedNames.some((c) => c.includes(n) || n.includes(c));
+  });
+
   return {
     loc,
     community,
     places,
     osm: nearestOsm(lat, lon, d.osm),
+    haulers,
     provider: providerName,
     violations: pwsid && d.violations ? d.violations[pwsid] : null,
   };
@@ -379,19 +427,46 @@ function contextFacts(c) {
     </p>`;
 }
 
+/*
+ * A small OpenStreetMap slippy-map embed centred on one point.
+ *
+ * The iframe src is only built when the panel is opened (see the toggle
+ * handler in render), because a results page can list a dozen points and
+ * a dozen eagerly-loaded map frames is both slow and a dozen requests to
+ * openstreetmap.org that most visitors never look at.
+ */
+function mapEmbedSrc(lat, lon, pad = 0.004) {
+  const bbox = [lon - pad, lat - pad / 2, lon + pad, lat + pad / 2]
+    .map((n) => n.toFixed(5))
+    .join(",");
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+}
+
 function renderOsm(points, curatedToo) {
   if (!points.length) return "";
   const items = points
     .map(
-      (p) => `
+      (p, i) => `
       <li>
-        <strong>${esc(p.name)}</strong>
-        <span class="dist">${p.miles.toFixed(1)} mi</span>
-        <span class="osm-kind">${esc(p.kind)}</span>
-        ${p.operator ? `<span class="osm-kind">${esc(p.operator)}</span>` : ""}
-        ${p.fee === "yes" ? `<span class="osm-kind">fee</span>` : ""}
-        <a href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=17/${p.lat}/${p.lon}"
-           rel="noopener">map</a>
+        <div class="osm-row">
+          <strong>${esc(p.name)}</strong>
+          <span class="dist">${p.miles.toFixed(1)} mi</span>
+          <span class="osm-kind">${esc(p.kind)}</span>
+          ${p.operator ? `<span class="osm-kind">${esc(p.operator)}</span>` : ""}
+          ${p.fee === "yes" ? `<span class="osm-kind">fee</span>` : ""}
+          ${p.seasonal ? `<span class="osm-kind">seasonal</span>` : ""}
+        </div>
+        <details class="mapwrap" data-lat="${p.lat}" data-lon="${p.lon}">
+          <summary>Show map</summary>
+          <div class="mapslot" id="map-${i}"></div>
+          <p class="provenance">
+            <a href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=17/${p.lat}/${p.lon}"
+               rel="noopener">Open in OpenStreetMap</a>
+            ·
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}"
+               rel="noopener">Directions</a>
+          </p>
+        </details>
       </li>`
     )
     .join("");
@@ -406,6 +481,47 @@ function renderOsm(points, curatedToo) {
         If you need bulk water, you want a hauler or a standpipe.
       </p>
       <ul class="osm-list">${items}</ul>
+    </div>`;
+}
+
+function renderHaulers(haulers) {
+  if (!haulers.length) return "";
+  const row = (h) => `
+    <li class="hauler ${h.confidence}">
+      <div class="hauler-top">
+        <strong>${esc(h.name)}</strong>
+        <span class="badge-conf ${h.confidence}">${
+          h.confidence === "high" ? "Likely water hauler" : "Possible, unconfirmed"
+        }</span>
+      </div>
+      <p class="hauler-meta">
+        Based in ${esc(h.city || "Arizona")}${
+          h.miles != null ? ` · about ${Math.round(h.miles)} mi away` : ""
+        }${h.trucks ? ` · ${esc(String(h.trucks))} truck${h.trucks === "1" ? "" : "s"}` : ""}
+      </p>
+      ${
+        h.phone
+          ? `<p class="hauler-call"><a class="btn-call" href="tel:${esc(
+              h.phone.replace(/[^\d+]/g, "")
+            )}">Call ${esc(h.phone)}</a></p>`
+          : `<p class="hauler-meta">No phone number on file. Look them up by USDOT ${esc(
+              String(h.dot || "")
+            )}.</p>`
+      }
+    </li>`;
+
+  return `
+    <div class="haulers">
+      <h3>Water haulers that may serve you</h3>
+      <p class="caveat">
+        <strong>Call before you count on any of these.</strong> Arizona has no
+        public registry of water haulers, so this list is built from federal
+        motor-carrier records by matching business names. That means some
+        entries will be wrong, some will have stopped hauling water, and some
+        won't come to you. Distance is from the company's registered address,
+        not a service area, so a further one may still deliver to you.
+      </p>
+      <ul class="hauler-list">${haulers.map(row).join("")}</ul>
     </div>`;
 }
 
@@ -425,6 +541,7 @@ function render(r) {
            and we'll verify and add it.
          </p>
        </div>
+       ${renderHaulers(r.haulers)}
        ${renderOsm(r.osm, false)}`
     : `<p class="tier-note">${esc(r.community.note)}</p>
        <div class="places">${r.places.map(renderPlace).join("")}</div>
@@ -435,10 +552,13 @@ function render(r) {
               <a href="${esc(s.website)}" rel="noopener">${esc(s.name)}</a> — ${esc(s.what)}</p>`
          )
          .join("")}
+       ${renderHaulers(r.haulers)}
        ${renderOsm(r.osm, true)}`;
 
   results.innerHTML = `
-    <p class="matched">Showing results for ${esc(r.loc.matched)}</p>
+    <p class="matched">Showing results for ${esc(r.loc.matched)}${
+      r.loc.approximate ? " (approximate location)" : ""
+    }</p>
 
     <section class="tier">
       <div class="tier-head"><span class="tier-num">1 · Right now</span><h2>Where to get water</h2></div>
@@ -454,6 +574,22 @@ function render(r) {
       <div class="tier-head"><span class="tier-num">3 · Background</span><h2>The bigger picture</h2></div>
       ${renderContext()}
     </section>`;
+
+  // Map frames are built on first open. Eagerly embedding one per water
+  // point would fire a dozen requests to openstreetmap.org for maps most
+  // visitors never scroll to.
+  results.querySelectorAll(".mapwrap").forEach((wrap) => {
+    wrap.addEventListener("toggle", () => {
+      const slot = wrap.querySelector(".mapslot");
+      if (!wrap.open || slot.firstChild) return;
+      const frame = document.createElement("iframe");
+      frame.src = mapEmbedSrc(Number(wrap.dataset.lat), Number(wrap.dataset.lon));
+      frame.loading = "lazy";
+      frame.title = "Map of this water point";
+      frame.referrerPolicy = "no-referrer";
+      slot.appendChild(frame);
+    });
+  });
 
   // Tier 3's data is most of the page weight, so it's fetched the first
   // time someone actually opens the panel, not on every lookup.
@@ -491,14 +627,29 @@ async function onSubmit(e) {
   }
 
   setBusy(true, "Looking up your address…");
+  const picked = pickedSuggestion;
+  closeSuggestions();
   try {
-    const [d, loc] = await Promise.all([loadData(), geocode(address)]);
+    const d = await loadData();
+    let loc;
+    try {
+      loc = await geocode(address);
+    } catch (err) {
+      // The Census geocoder doesn't know every rural address, and this
+      // site exists for rural addresses. If the person picked a suggestion,
+      // fall back to its coordinates rather than dead-ending them.
+      if (err.message === "no-match" && picked) {
+        loc = { lat: picked.lat, lon: picked.lon, matched: address, approximate: true };
+      } else {
+        throw err;
+      }
+    }
     render(lookup(loc, d));
     results.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (err) {
     const msg =
       err.message === "no-match"
-        ? `We couldn't find that address. Try including the city and ZIP, for example "17204 E Rio Verde Dr, Rio Verde, AZ 85263". Rural addresses sometimes aren't in the Census database even when they exist.`
+        ? `We couldn't pin down that address. Try typing just the town, like "Rio Verde" or "Dolan Springs", and pick one of the suggestions.`
         : `Something went wrong looking that up. Check your connection and try again.`;
     results.innerHTML = `<p class="status error">${esc(msg)}</p>`;
   } finally {
@@ -506,15 +657,162 @@ async function onSubmit(e) {
   }
 }
 
+/* ---------- address suggestions ---------- */
+
+/*
+ * Type-ahead uses Photon (OpenStreetMap-based, CORS-enabled, no API key).
+ *
+ * The Census geocoder stays the authority for the final answer because it
+ * knows US address ranges, but it has no suggest endpoint and it flatly
+ * fails on plenty of rural addresses -- which is this site's whole
+ * audience. So Photon suggests, Census resolves, and if Census can't match
+ * the address the coordinates from the chosen suggestion are used instead.
+ * That combination is what lets someone type "Rio Verde" and still get an
+ * answer.
+ */
+const PHOTON = "https://photon.komoot.io/api/";
+// Roughly the centre of Arizona: biases results toward the state without
+// hard-excluding a border town.
+const AZ_BIAS = { lat: 34.3, lon: -111.7 };
+
+let suggestBox, comboWrap;
+let suggestions = [];
+let activeIndex = -1;
+let pickedSuggestion = null;
+let suggestTimer = null;
+let suggestAbort = null;
+
+function labelFor(props) {
+  const line1 = [props.housenumber, props.street || props.name].filter(Boolean).join(" ");
+  const place = props.city || props.county;
+  // For a town, Photon puts the same name in both `name` and `city`, which
+  // renders as "Dolan Springs, Dolan Springs, Arizona". Drop the repeat.
+  const line2 = [place === line1 ? null : place, props.state, props.postcode]
+    .filter(Boolean)
+    .join(", ");
+  return { line1: line1 || props.name || "", line2 };
+}
+
+async function suggest(query) {
+  if (suggestAbort) suggestAbort.abort();
+  suggestAbort = new AbortController();
+  const url =
+    `${PHOTON}?q=${encodeURIComponent(query)}&limit=6` +
+    `&lat=${AZ_BIAS.lat}&lon=${AZ_BIAS.lon}&lang=en`;
+  const r = await fetch(url, { signal: suggestAbort.signal });
+  if (!r.ok) throw new Error("suggest-failed");
+  const json = await r.json();
+  return (json.features || [])
+    // Arizona only: the site can't answer for anywhere else, so offering
+    // a Texas match would just waste someone's time.
+    .filter((f) => (f.properties || {}).state === "Arizona")
+    .map((f) => ({
+      ...labelFor(f.properties),
+      lat: f.geometry.coordinates[1],
+      lon: f.geometry.coordinates[0],
+    }))
+    .filter((s) => s.line1);
+}
+
+function closeSuggestions() {
+  suggestions = [];
+  activeIndex = -1;
+  suggestBox.hidden = true;
+  suggestBox.innerHTML = "";
+  comboWrap.setAttribute("aria-expanded", "false");
+  input.removeAttribute("aria-activedescendant");
+}
+
+function renderSuggestions() {
+  if (!suggestions.length) return closeSuggestions();
+  suggestBox.innerHTML = suggestions
+    .map(
+      (s, i) => `
+      <li role="option" id="sug-${i}" tabindex="-1"
+          aria-selected="${i === activeIndex}"
+          class="${i === activeIndex ? "active" : ""}">
+        <span class="sug-1">${esc(s.line1)}</span>
+        <span class="sug-2">${esc(s.line2)}</span>
+      </li>`
+    )
+    .join("");
+  suggestBox.hidden = false;
+  comboWrap.setAttribute("aria-expanded", "true");
+  if (activeIndex >= 0) input.setAttribute("aria-activedescendant", `sug-${activeIndex}`);
+  else input.removeAttribute("aria-activedescendant");
+}
+
+function choose(i) {
+  const s = suggestions[i];
+  if (!s) return;
+  pickedSuggestion = s;
+  input.value = [s.line1, s.line2].filter(Boolean).join(", ");
+  closeSuggestions();
+  form.requestSubmit();
+}
+
+function onType() {
+  // Typing invalidates any previously picked suggestion, otherwise a stale
+  // coordinate could answer for an address the person has since edited.
+  pickedSuggestion = null;
+  const q = input.value.trim();
+  clearTimeout(suggestTimer);
+  if (q.length < 3) return closeSuggestions();
+  suggestTimer = setTimeout(async () => {
+    try {
+      suggestions = await suggest(q);
+      activeIndex = -1;
+      renderSuggestions();
+    } catch (e) {
+      if (e.name !== "AbortError") closeSuggestions();
+    }
+  }, 220);
+}
+
+function onKeyDown(e) {
+  if (suggestBox.hidden) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    const step = e.key === "ArrowDown" ? 1 : -1;
+    activeIndex = (activeIndex + step + suggestions.length + 1) % (suggestions.length + 1);
+    if (activeIndex === suggestions.length) activeIndex = -1;
+    renderSuggestions();
+  } else if (e.key === "Enter" && activeIndex >= 0) {
+    e.preventDefault();
+    choose(activeIndex);
+  } else if (e.key === "Escape") {
+    closeSuggestions();
+  }
+}
+
+/* ---------- events ---------- */
+
 function init() {
   results = document.getElementById("results");
   form = document.getElementById("lookup");
   input = document.getElementById("address");
   submitBtn = document.getElementById("submit-btn");
+  suggestBox = document.getElementById("suggestions");
+  comboWrap = document.querySelector(".combo");
 
   form.addEventListener("submit", onSubmit);
+  input.addEventListener("input", onType);
+  input.addEventListener("keydown", onKeyDown);
+  suggestBox.addEventListener("mousedown", (e) => {
+    // mousedown, not click: blur would close the list first.
+    const li = e.target.closest("li");
+    if (li) {
+      e.preventDefault();
+      choose([...suggestBox.children].indexOf(li));
+    }
+  });
+  document.addEventListener("click", (e) => {
+    if (!comboWrap.contains(e.target)) closeSuggestions();
+  });
+
   document.getElementById("try-example").addEventListener("click", () => {
     input.value = "17204 E Rio Verde Dr, Rio Verde, AZ 85263";
+    pickedSuggestion = null;
     form.requestSubmit();
   });
 }
@@ -524,4 +822,5 @@ if (typeof document !== "undefined") init();
 export {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
   communityFor, nameOf, pwsidOf, lookup, nearestOsm, lookupContext,
+  nearestHaulers, mapEmbedSrc, labelFor,
 };

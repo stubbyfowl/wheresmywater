@@ -37,21 +37,31 @@
       </p>
 
       <form id="lookup" class="lookup" novalidate>
-        <label for="address">Your address</label>
+        <label for="address">Your address or town</label>
         <div class="lookup-row">
-          <input
-            id="address"
-            name="address"
-            type="text"
-            autocomplete="street-address"
-            placeholder="e.g. 17204 E Rio Verde Dr, Rio Verde, AZ 85263"
-            required
-            aria-describedby="address-help">
+          <div class="combo" role="combobox" aria-expanded="false"
+               aria-owns="suggestions" aria-haspopup="listbox">
+            <input
+              id="address"
+              name="address"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="Start typing an address or town, e.g. Rio Verde"
+              required
+              aria-autocomplete="list"
+              aria-controls="suggestions"
+              aria-describedby="address-help">
+            <ul id="suggestions" class="suggestions" role="listbox"
+                aria-label="Address suggestions" hidden></ul>
+          </div>
           <button type="submit" id="submit-btn">Find water</button>
         </div>
         <p id="address-help" class="help">
-          We don't store your address. The lookup happens in your browser.
-          <button type="button" class="linkish" id="try-example">Try an example address</button>
+          A town or crossroads works, it doesn't have to be an exact address.
+          We don't store it, the lookup happens in your browser.
+          <button type="button" class="linkish" id="try-example">Try an example</button>
         </p>
       </form>
     </div>

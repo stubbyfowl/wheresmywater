@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
   communityFor, nameOf, pwsidOf, nearestOsm, lookupContext,
+  nearestHaulers, mapEmbedSrc, labelFor, lookup,
 } from "./script.js";
 
 const square = [[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]];
@@ -86,5 +87,64 @@ const ctx = lookupContext(
 );
 assert.equal(ctx.wellCount, 2, "counts wells within a mile, ignores the far one");
 assert.equal(ctx.ama, null, "no AMA match -> null, rendered as 'outside any AMA'");
+
+// Haulers: high confidence outranks a merely-plausible closer one, because
+// a wrong lead costs a wasted phone call.
+const haulers = [
+  { name: "Close but unsure", city: "A", confidence: "low", lat: 33.742, lon: -111.709 },
+  { name: "Further but certain", city: "B", confidence: "high", lat: 33.80, lon: -111.75 },
+  { name: "Way out of range", city: "C", confidence: "high", lat: 31.35, lon: -110.0 },
+  { name: "No coordinates", city: "D", confidence: "high", lat: null, lon: null },
+];
+const nh = nearestHaulers(33.7415, -111.709, haulers);
+assert.equal(nh[0].name, "Further but certain", "high confidence sorts first");
+assert.ok(!nh.some((h) => h.name === "Way out of range"), "beyond 75mi is dropped");
+assert.ok(nh.some((h) => h.name === "No coordinates"), "kept when it has no location");
+assert.equal(nearestHaulers(33.7, -111.7, []).length, 0, "no haulers -> empty");
+assert.equal(nearestHaulers(33.7, -111.7, haulers, 1).length, 1, "limit honoured");
+
+// A curated entry and its FMCSA twin must not both appear.
+const dedup = lookup(
+  { lat: 33.7415, lon: -111.709 },
+  {
+    cws: { features: [] },
+    violations: {},
+    osm: [],
+    directory: {
+      communities: [{
+        id: "rvf", bbox: [-111.8, 33.68, -111.55, 33.86], note: "",
+        entries: [{ name: "Rio Verde Foothills Potable Water Hauling, LLC", lat: 33.73, lon: -111.84 }],
+      }],
+    },
+    haulers: [
+      { name: "RIO VERDE FOOTHILLS POTABLE WATER HAULING LLC", confidence: "high", lat: 33.73, lon: -111.84 },
+      { name: "Sonoran Water Hauling LLC", confidence: "high", lat: 33.88, lon: -112.13 },
+    ],
+  }
+);
+assert.equal(dedup.haulers.length, 1, "the curated company is not repeated as a lead");
+assert.equal(dedup.haulers[0].name, "Sonoran Water Hauling LLC");
+assert.equal(dedup.places.length, 1, "curated entry survives");
+
+// Map embed must put the marker inside its own bbox, or the pin lands off
+// the visible map.
+const src = mapEmbedSrc(33.7385, -111.6989);
+const bbox = new URL(src).searchParams.get("bbox").split(",").map(Number);
+const [bl, bb, br, bt] = bbox;
+assert.ok(bl < -111.6989 && br > -111.6989, "marker lon inside bbox");
+assert.ok(bb < 33.7385 && bt > 33.7385, "marker lat inside bbox");
+assert.ok(new URL(src).searchParams.get("marker").startsWith("33.7385"), "marker set");
+
+// Suggestion labels: a town with no street still has to render something.
+assert.deepEqual(
+  labelFor({ housenumber: "17204", street: "E Rio Verde Dr", city: "Rio Verde", state: "Arizona", postcode: "85263" }),
+  { line1: "17204 E Rio Verde Dr", line2: "Rio Verde, Arizona, 85263" }
+);
+assert.equal(labelFor({ name: "Dolan Springs", state: "Arizona" }).line1, "Dolan Springs");
+// Photon repeats a town's name in both `name` and `city`; don't echo it.
+assert.deepEqual(
+  labelFor({ name: "Dolan Springs", city: "Dolan Springs", state: "Arizona", postcode: "86441" }),
+  { line1: "Dolan Springs", line2: "Arizona, 86441" }
+);
 
 console.log("all geometry checks passed");
