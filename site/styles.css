@@ -184,6 +184,21 @@ button {
 .provenance { font-size: .8125rem; color: var(--ink-soft); margin: 0; }
 .unverified { color: var(--warn); font-weight: 500; }
 
+/* tier 1b: community-mapped points (OpenStreetMap) */
+.osm { margin-top: 1.5rem; padding: 1.25rem; background: var(--sand); border-radius: var(--radius); }
+.osm h3 { margin-bottom: .375rem; }
+.osm .caveat { margin-bottom: 1rem; }
+.osm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.osm-list li {
+  display: flex; align-items: baseline; gap: .625rem; flex-wrap: wrap;
+  background: var(--paper); border-radius: 6px; padding: .625rem .875rem; font-size: .9375rem;
+}
+.osm-kind {
+  font: 500 .6875rem/1 var(--mono); text-transform: uppercase; letter-spacing: .04em;
+  color: var(--ink-soft); background: var(--sand); padding: .3125rem .4375rem; border-radius: 4px;
+}
+.osm-list a { margin-left: auto; font-size: .875rem; }
+
 /* tier 2: provider */
 .provider {
   background: #fff; border: 1px solid var(--rule); border-radius: var(--radius);

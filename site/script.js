@@ -71,30 +71,51 @@ function milesBetween(lat1, lon1, lat2, lon2) {
 
 /* ---------- data ---------- */
 
+// A missing file degrades one panel rather than breaking the lookup.
+async function grab(name, fallback) {
+  try {
+    const r = await fetch(`data/${name}`);
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch (e) {
+    console.warn(`could not load ${name}`, e);
+    return fallback;
+  }
+}
+
+/*
+ * Statewide coverage means ~4.5MB of boundaries (788KB gzipped), and the
+ * people most likely to need this site are on rural cell connections. So
+ * the load is split by what the answer actually shows:
+ *
+ *   core    (~170KB gzipped) directory + providers + water points: needed
+ *                            for tiers 1 and 2, fetched on first search.
+ *   context (~620KB gzipped) AMA, AAWS and 46,890 well points: tier 3 only,
+ *                            which is collapsed by default, so it isn't
+ *                            fetched until someone actually opens it.
+ */
 async function loadData() {
   if (data) return data;
-  // violations.json is large and optional; a missing file degrades the
-  // safety panel rather than breaking the whole lookup.
-  const grab = async (name, fallback) => {
-    try {
-      const r = await fetch(`data/${name}`);
-      if (!r.ok) throw new Error(r.status);
-      return await r.json();
-    } catch (e) {
-      console.warn(`could not load ${name}`, e);
-      return fallback;
-    }
-  };
-  const [directory, cws, ama, aaws, wells, violations] = await Promise.all([
+  const [directory, cws, osm, violations] = await Promise.all([
     grab("directory.json", { communities: [] }),
     grab("cws.json", { features: [] }),
+    grab("osm_water.json", []),
+    grab("violations.json", {}),
+  ]);
+  data = { directory, cws, osm, violations };
+  return data;
+}
+
+let contextData = null;
+async function loadContext() {
+  if (contextData) return contextData;
+  const [ama, aaws, wells] = await Promise.all([
     grab("ama_ina.json", { features: [] }),
     grab("aaws.json", { features: [] }),
     grab("wells.json", []),
-    grab("violations.json", {}),
   ]);
-  data = { directory, cws, ama, aaws, wells, violations };
-  return data;
+  contextData = { ama, aaws, wells };
+  return contextData;
 }
 
 /*
@@ -169,6 +190,17 @@ function communityFor(lon, lat, directory) {
   );
 }
 
+// Nearest community-mapped water points. Only used to give people outside
+// the curated communities something rather than nothing, so the radius is
+// generous and the caller is responsible for labelling them honestly.
+function nearestOsm(lat, lon, osm, limit = 6, maxMiles = 30) {
+  return (osm || [])
+    .map((p) => ({ ...p, miles: milesBetween(lat, lon, p.lat, p.lon) }))
+    .filter((p) => p.miles <= maxMiles)
+    .sort((a, b) => a.miles - b.miles)
+    .slice(0, limit);
+}
+
 function lookup(loc, d) {
   const { lon, lat } = loc;
   const cwsFeature = findFeature(d.cws, lon, lat);
@@ -187,19 +219,25 @@ function lookup(loc, d) {
         .sort((a, b) => (a.miles ?? Infinity) - (b.miles ?? Infinity))
     : [];
 
-  const wellCount = (d.wells || []).filter(
-    (w) => milesBetween(lat, lon, w.lat, w.lon) <= NEARBY_WELL_RADIUS_MI
-  ).length;
-
   return {
     loc,
     community,
     places,
+    osm: nearestOsm(lat, lon, d.osm),
     provider: providerName,
     violations: pwsid && d.violations ? d.violations[pwsid] : null,
-    ama: nameOf(findFeature(d.ama, lon, lat), /BASIN_NAME|NAME/i),
-    aaws: findFeature(d.aaws, lon, lat),
-    wellCount,
+  };
+}
+
+// Tier 3 only, and only once someone opens it -- see loadContext().
+function lookupContext(loc, c) {
+  const { lon, lat } = loc;
+  return {
+    ama: nameOf(findFeature(c.ama, lon, lat), /BASIN_NAME|NAME/i),
+    aaws: findFeature(c.aaws, lon, lat),
+    wellCount: (c.wells || []).filter(
+      ([wlat, wlon]) => milesBetween(lat, lon, wlat, wlon) <= NEARBY_WELL_RADIUS_MI
+    ).length,
   };
 }
 
@@ -307,46 +345,87 @@ function renderProvider(r) {
     </div>`;
 }
 
-function renderContext(r) {
-  const facts = [
-    `<div class="fact"><dt>Groundwater management</dt><dd>${
-      r.ama ? esc(r.ama) : "Outside any AMA or INA"
-    }</dd></div>`,
-    `<div class="fact"><dt>Monitored wells within 1 mile</dt><dd>${r.wellCount}</dd></div>`,
-    `<div class="fact"><dt>100-year supply determination</dt><dd>${
-      r.aaws ? "On record for this area" : "None found for this address"
-    }</dd></div>`,
-  ];
-
+function renderContext() {
+  // Deliberately empty until opened: the layers behind it are most of the
+  // page weight and most visitors never expand this.
   return `
-    <details class="context">
+    <details class="context" id="context">
       <summary>Why this area is the way it is</summary>
-      <div class="context-body">
-        <dl class="facts">${facts.join("")}</dl>
-        <p class="caveat">
-          Active Management Areas are the parts of Arizona with real
-          groundwater regulation. The well count comes from ADWR's monitoring
-          index, which does not include every private or exempt well, so
-          treat it as a floor rather than a total. A 100-year supply
-          determination means a subdivision had to prove long-term water
-          availability before it was approved.
-        </p>
+      <div class="context-body" id="context-body">
+        <p class="caveat">Loading…</p>
       </div>
     </details>`;
+}
+
+function contextFacts(c) {
+  const facts = [
+    `<div class="fact"><dt>Groundwater management</dt><dd>${
+      c.ama ? esc(c.ama) : "Outside any AMA or INA"
+    }</dd></div>`,
+    `<div class="fact"><dt>Monitored wells within 1 mile</dt><dd>${c.wellCount}</dd></div>`,
+    `<div class="fact"><dt>100-year supply determination</dt><dd>${
+      c.aaws ? "On record for this area" : "None found for this address"
+    }</dd></div>`,
+  ];
+  return `
+    <dl class="facts">${facts.join("")}</dl>
+    <p class="caveat">
+      Active Management Areas are the parts of Arizona with real groundwater
+      regulation; most of the state sits outside one. The well count comes
+      from ADWR's monitoring index, which does not include every private or
+      exempt well, so treat it as a floor rather than a total. A 100-year
+      supply determination means a subdivision had to prove long-term water
+      availability before it was approved.
+    </p>`;
+}
+
+function renderOsm(points, curatedToo) {
+  if (!points.length) return "";
+  const items = points
+    .map(
+      (p) => `
+      <li>
+        <strong>${esc(p.name)}</strong>
+        <span class="dist">${p.miles.toFixed(1)} mi</span>
+        <span class="osm-kind">${esc(p.kind)}</span>
+        ${p.operator ? `<span class="osm-kind">${esc(p.operator)}</span>` : ""}
+        ${p.fee === "yes" ? `<span class="osm-kind">fee</span>` : ""}
+        <a href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lon}#map=17/${p.lat}/${p.lon}"
+           rel="noopener">map</a>
+      </li>`
+    )
+    .join("");
+
+  return `
+    <div class="osm">
+      <h3>${curatedToo ? "Other public water points nearby" : "Public water points nearby"}</h3>
+      <p class="caveat">
+        Mapped by OpenStreetMap volunteers, not verified by us. Most are
+        drinking fountains or campground taps, useful for filling bottles or
+        a jug but <strong>not</strong> for filling a household storage tank.
+        If you need bulk water, you want a hauler or a standpipe.
+      </p>
+      <ul class="osm-list">${items}</ul>
+    </div>`;
 }
 
 function render(r) {
   const tier1 = !r.community
     ? `<div class="status">
-         <p style="margin:0"><strong>We haven't mapped water sources for this area yet.</strong></p>
+         <p style="margin:0"><strong>No haulers or standpipes verified for this area yet.</strong></p>
          <p style="margin:.5rem 0 0">
-           This directory is hand-built and currently covers Rio Verde
-           Foothills. Your provider and regulatory details are below, and if
-           you know water sources near you, please
+           The verified directory is built by hand and currently covers Rio
+           Verde Foothills. ${
+             r.osm.length
+               ? "Community-mapped water points near you are listed below."
+               : ""
+           }
+           If you know a hauler or standpipe near you, please
            <a href="mailto:sidaksmann@gmail.com?subject=Water%20source%20suggestion">tell us</a>
-           so we can add them.
+           and we'll verify and add it.
          </p>
-       </div>`
+       </div>
+       ${renderOsm(r.osm, false)}`
     : `<p class="tier-note">${esc(r.community.note)}</p>
        <div class="places">${r.places.map(renderPlace).join("")}</div>
        ${(r.community.also_see || [])
@@ -355,7 +434,8 @@ function render(r) {
              `<p class="provenance" style="margin-top:1rem">Also worth checking:
               <a href="${esc(s.website)}" rel="noopener">${esc(s.name)}</a> — ${esc(s.what)}</p>`
          )
-         .join("")}`;
+         .join("")}
+       ${renderOsm(r.osm, true)}`;
 
   results.innerHTML = `
     <p class="matched">Showing results for ${esc(r.loc.matched)}</p>
@@ -372,8 +452,24 @@ function render(r) {
 
     <section class="tier">
       <div class="tier-head"><span class="tier-num">3 · Background</span><h2>The bigger picture</h2></div>
-      ${renderContext(r)}
+      ${renderContext()}
     </section>`;
+
+  // Tier 3's data is most of the page weight, so it's fetched the first
+  // time someone actually opens the panel, not on every lookup.
+  const details = document.getElementById("context");
+  const body = document.getElementById("context-body");
+  let loaded = false;
+  details.addEventListener("toggle", async () => {
+    if (!details.open || loaded) return;
+    loaded = true;
+    try {
+      body.innerHTML = contextFacts(lookupContext(r.loc, await loadContext()));
+    } catch (e) {
+      loaded = false;
+      body.innerHTML = `<p class="caveat">Couldn't load the background data. Try opening this again.</p>`;
+    }
+  });
 }
 
 /* ---------- events ---------- */
@@ -425,4 +521,7 @@ function init() {
 
 if (typeof document !== "undefined") init();
 
-export { inRing, inPolygon, inFeature, findFeature, milesBetween, communityFor, nameOf, pwsidOf, lookup };
+export {
+  inRing, inPolygon, inFeature, findFeature, milesBetween,
+  communityFor, nameOf, pwsidOf, lookup, nearestOsm, lookupContext,
+};

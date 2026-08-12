@@ -30,12 +30,20 @@ os.makedirs(OUT_DIR, exist_ok=True)
 SIMPLIFY_DEG = 0.0001
 
 
-def write_geojson(gdf: gpd.GeoDataFrame, keep_cols: list[str], out_name: str):
+def write_geojson(gdf: gpd.GeoDataFrame, keep_cols: list[str], out_name: str,
+                  simplify: float = SIMPLIFY_DEG):
     """Trim to the fields the UI uses, simplify geometry, write GeoJSON."""
     gdf = gdf.to_crs(epsg=4326).copy()
+
+    # Statewide layers carry records with no geometry at all (113 of 959 in
+    # the CWS layer). They can never match a point, so they're pure payload.
+    before = len(gdf)
+    gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty]
+    dropped = before - len(gdf)
+
     present = [c for c in keep_cols if c in gdf.columns]
     gdf = gdf[present + ["geometry"]]
-    gdf["geometry"] = gdf.geometry.simplify(SIMPLIFY_DEG, preserve_topology=True)
+    gdf["geometry"] = gdf.geometry.simplify(simplify, preserve_topology=True)
     # Provider names in the CWS layer have stray leading/trailing whitespace.
     for c in present:
         if gdf[c].dtype == object:
@@ -43,8 +51,11 @@ def write_geojson(gdf: gpd.GeoDataFrame, keep_cols: list[str], out_name: str):
     path = os.path.join(OUT_DIR, out_name)
     if os.path.exists(path):
         os.remove(path)
-    gdf.to_file(path, driver="GeoJSON")
-    print(f"  {out_name}: {len(gdf)} features, {os.path.getsize(path):,} bytes")
+    # 5 decimal places is ~1m: far more precision than a regulatory boundary
+    # actually carries, and it roughly halves the file.
+    gdf.to_file(path, driver="GeoJSON", COORDINATE_PRECISION=5)
+    note = f", dropped {dropped} with no geometry" if dropped else ""
+    print(f"  {out_name}: {len(gdf)} features{note}, {os.path.getsize(path):,} bytes")
 
 
 def build_boundaries():
@@ -61,10 +72,15 @@ def build_boundaries():
         ["CWS_NAME", "ADEQ_ID", "OWNER_NAME", "PHONE", "POPULATION", "COUNTY", "STATUS"],
         "cws.json",
     )
+    # Statewide AAWS is 5,594 subdivision polygons. It only drives a
+    # yes/no "is there a determination here" line in the collapsed context
+    # panel, so it gets simplified harder (~20m) than the layers whose
+    # answer a person acts on.
     write_geojson(
-        gpd.read_file(os.path.join(DATA_DIR, "aaws_determinations.geojson")),
+        gpd.read_file(os.path.join(DATA_DIR, "_statewide_aaws_determinations.geojson")),
         ["SUBDIVISION", "FILE_TYPE", "WATER_PROVIDER", "F100_YR", "FILESTATUS"],
         "aaws.json",
+        simplify=0.0002,
     )
 
 
@@ -82,16 +98,18 @@ def build_wells():
         print("  no GWSI shapefile found, skipping")
         return
     w = gpd.read_file(shp[0]).to_crs(epsg=4326)
-    w = w.cx[-111.9:-111.4, 33.6:33.95]
+    # Statewide now. Stored as bare [lat,lon] pairs at 4dp (~11m) rather
+    # than {"lat":..,"lon":..} objects: the key names cost more bytes than
+    # the coordinates, and the layer only feeds a count within a mile.
     out = [
-        {"lat": round(geom.y, 5), "lon": round(geom.x, 5)}
+        [round(geom.y, 4), round(geom.x, 4)]
         for geom in w.geometry
         if geom is not None and not geom.is_empty
     ]
     path = os.path.join(OUT_DIR, "wells.json")
     with open(path, "w") as f:
-        json.dump(out, f)
-    print(f"  wells.json: {len(out)} wells, {os.path.getsize(path):,} bytes")
+        json.dump(out, f, separators=(",", ":"))
+    print(f"  wells.json: {len(out):,} wells, {os.path.getsize(path):,} bytes")
 
 
 def build_violations():
@@ -109,6 +127,18 @@ def build_violations():
     zip_path = os.path.join(DATA_DIR, "epa", "SDWA_latest_downloads.zip")
     if not os.path.exists(zip_path):
         print("  EPA zip not downloaded yet, skipping")
+        return
+
+    # A part-finished download is a valid file on disk but not a valid zip.
+    # That's expected (it's 423MB over a slow server), so say so plainly
+    # instead of taking the whole build down with a traceback.
+    try:
+        zipfile.ZipFile(zip_path).close()
+    except zipfile.BadZipFile:
+        have = os.path.getsize(zip_path) / 1e6
+        print(f"  {zip_path} is incomplete ({have:.0f}MB so far), skipping.")
+        print("  Resume it with: curl -C - -o data/epa/SDWA_latest_downloads.zip \\")
+        print("    https://echo.epa.gov/files/echodownloads/SDWA_latest_downloads.zip")
         return
 
     with zipfile.ZipFile(zip_path) as z:
@@ -160,8 +190,97 @@ def build_violations():
     print(f"  violations.json: {len(systems)} systems ({flagged} with violations), {os.path.getsize(path):,} bytes")
 
 
+def build_osm_water():
+    """
+    Publicly mapped water points across Arizona, from OpenStreetMap.
+
+    This is the only statewide source of "somewhere to actually get water"
+    that exists at all. It is NOT equivalent to the hand-curated directory
+    and must never be presented as such: most of these are drinking
+    fountains and campground taps, which are useless to someone whose 2,500
+    gallon household tank is empty. They are worth showing because outside
+    the curated communities the alternative is showing nothing, but the UI
+    labels them as community-mapped and unverified.
+
+    Licence: OpenStreetMap contributors, ODbL. Attribution is in the footer.
+    """
+    print("OSM water points...")
+    import urllib.request
+    import urllib.parse
+
+    query = """
+    [out:json][timeout:180];
+    area["ISO3166-2"="US-AZ"][admin_level=4]->.az;
+    (
+      node["amenity"="drinking_water"](area.az);
+      node["amenity"="water_point"](area.az);
+      node["man_made"="water_tap"](area.az);
+      node["shop"="water"](area.az);
+    );
+    out body;
+    """
+    req = urllib.request.Request(
+        "https://overpass-api.de/api/interpreter",
+        data=urllib.parse.urlencode({"data": query}).encode(),
+        headers={"User-Agent": "wheresmywater.org (sidaksmann@gmail.com)"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=200) as r:
+            payload = json.load(r)
+    except Exception as e:
+        print(f"  Overpass request failed ({e}), leaving existing file alone")
+        return
+
+    kinds = {
+        "drinking_water": "Drinking water",
+        "water_point": "Water filling point",
+        "water_tap": "Water tap",
+    }
+    out = []
+    for el in payload.get("elements", []):
+        t = el.get("tags", {})
+        kind = kinds.get(t.get("amenity") or t.get("man_made"))
+        if t.get("shop") == "water":
+            kind = "Water shop"
+        out.append({
+            "name": t.get("name") or kind or "Public water point",
+            "kind": kind or "Water point",
+            "lat": round(el["lat"], 5),
+            "lon": round(el["lon"], 5),
+            # Bulk-capable sources are the ones that matter for hauling, so
+            # surface the tags that hint at it rather than hiding them.
+            "bottle": t.get("drinking_water:refill") or t.get("bottle"),
+            "fee": t.get("fee"),
+            "operator": t.get("operator"),
+            "seasonal": t.get("seasonal"),
+        })
+    out = [{k: v for k, v in o.items() if v is not None} for o in out]
+    path = os.path.join(OUT_DIR, "osm_water.json")
+    with open(path, "w") as f:
+        json.dump(out, f, separators=(",", ":"))
+    print(f"  osm_water.json: {len(out):,} points, {os.path.getsize(path):,} bytes")
+
+
+def report_payload():
+    """What a visitor actually downloads. Keep an eye on this."""
+    print("\nPayload shipped to the browser:")
+    import gzip
+    total = totalgz = 0
+    for name in sorted(os.listdir(OUT_DIR)):
+        p = os.path.join(OUT_DIR, name)
+        raw = os.path.getsize(p)
+        with open(p, "rb") as f:
+            gz = len(gzip.compress(f.read(), 6))
+        total += raw
+        totalgz += gz
+        print(f"  {name:20} {raw/1024:8.0f} KB  ({gz/1024:6.0f} KB gzipped)")
+    print(f"  {'TOTAL':20} {total/1024:8.0f} KB  ({totalgz/1024:6.0f} KB gzipped)")
+
+
 if __name__ == "__main__":
     build_boundaries()
     build_wells()
+    build_osm_water()
     build_violations()
+    report_payload()
     print("\nDone -> site/data/")

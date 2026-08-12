@@ -7,7 +7,10 @@
  * ADEQ_ID/CWS_NAME field names from ADWR.
  */
 import assert from "node:assert/strict";
-import { inRing, inPolygon, inFeature, findFeature, milesBetween, communityFor, nameOf, pwsidOf } from "./script.js";
+import {
+  inRing, inPolygon, inFeature, findFeature, milesBetween,
+  communityFor, nameOf, pwsidOf, nearestOsm, lookupContext,
+} from "./script.js";
 
 const square = [[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]];
 
@@ -52,5 +55,36 @@ assert.ok(milesBetween(33.7, -111.7, 33.7, -111.7) === 0, "same point is zero");
 const dir = { communities: [{ id: "rvf", bbox: [-111.8, 33.68, -111.55, 33.86] }] };
 assert.equal(communityFor(-111.709, 33.7415, dir).id, "rvf", "Rio Verde address matches");
 assert.equal(communityFor(-112.07, 33.45, dir), null, "downtown Phoenix does not");
+
+// Statewide fallback: nearest community-mapped points, closest first,
+// and nothing absurdly far away dressed up as "nearby".
+const osm = [
+  { name: "Far", kind: "Drinking water", lat: 32.2, lon: -110.9 },   // ~100mi
+  { name: "Close", kind: "Drinking water", lat: 33.745, lon: -111.71 },
+  { name: "Middle", kind: "Water tap", lat: 33.85, lon: -111.75 },
+];
+const near = nearestOsm(33.7415, -111.709, osm);
+assert.equal(near.length, 2, "the 100-mile point is excluded");
+assert.equal(near[0].name, "Close", "closest comes first");
+assert.ok(near[0].miles < near[1].miles, "sorted by distance");
+assert.equal(nearestOsm(33.7415, -111.709, osm, 1).length, 1, "limit is honoured");
+assert.deepEqual(nearestOsm(33.7, -111.7, []), [], "no points -> empty, not a crash");
+
+// Wells ship as bare [lat,lon] pairs to save payload; counting must match
+// that shape, and must count a radius rather than a bounding box.
+const ctx = lookupContext(
+  { lat: 33.7415, lon: -111.709 },
+  {
+    ama: { features: [] },
+    aaws: { features: [] },
+    wells: [
+      [33.7420, -111.7095], // ~0.04mi
+      [33.7500, -111.7100], // ~0.6mi
+      [34.5000, -111.7000], // ~52mi
+    ],
+  }
+);
+assert.equal(ctx.wellCount, 2, "counts wells within a mile, ignores the far one");
+assert.equal(ctx.ama, null, "no AMA match -> null, rendered as 'outside any AMA'");
 
 console.log("all geometry checks passed");

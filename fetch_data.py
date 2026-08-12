@@ -30,14 +30,15 @@ import requests
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# Rio Verde Foothills + surrounding rural Maricopa/Scottsdale-area land.
-# Loose bounding box for a v1 clip -- tighten later against the actual
-# Rio Verde Foothills CDP boundary from the Census TIGER files.
+# All of Arizona. v1 clipped to a Rio Verde Foothills box; the site now
+# answers for any Arizona address, so the pipeline pulls the whole state.
+# Padded slightly beyond the state's real extent (-114.82/-109.04,
+# 31.33/37.00) so boundary-hugging features aren't trimmed.
 BBOX = {
-    "minx": -111.75,
-    "miny": 33.70,
-    "maxx": -111.55,
-    "maxy": 33.85,
+    "minx": -115.0,
+    "miny": 31.2,
+    "maxx": -109.0,
+    "maxy": 37.1,
 }
 BBOX_WKID = 4326
 
