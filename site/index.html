@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where's My Water — Find water near you in Arizona</title>
+<meta name="description" content="Type an Arizona address and find out where to actually get water nearby, who your water provider is, and whether your water has had safety violations. Free, no signup.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#lookup">Skip to the address search</a>
+
+<header class="site-header">
+  <a class="brand" href="/">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Where's My Water</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="#how">How it works</a>
+    <a href="#why">Why this exists</a>
+    <a href="#data">Where the data comes from</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Free · No signup · Arizona</p>
+      <h1>Where can I get water?</h1>
+      <p class="lede">
+        Type your address. We'll show you the closest places to actually get
+        water, who your official provider is, and whether that water has had
+        safety violations on record.
+      </p>
+
+      <form id="lookup" class="lookup" novalidate>
+        <label for="address">Your address</label>
+        <div class="lookup-row">
+          <input
+            id="address"
+            name="address"
+            type="text"
+            autocomplete="street-address"
+            placeholder="e.g. 17204 E Rio Verde Dr, Rio Verde, AZ 85263"
+            required
+            aria-describedby="address-help">
+          <button type="submit" id="submit-btn">Find water</button>
+        </div>
+        <p id="address-help" class="help">
+          We don't store your address. The lookup happens in your browser.
+          <button type="button" class="linkish" id="try-example">Try an example address</button>
+        </p>
+      </form>
+    </div>
+    <div class="strata" aria-hidden="true">
+      <span style="--d:0"></span><span style="--d:1"></span><span style="--d:2"></span>
+      <span style="--d:3"></span><span style="--d:4"></span><span style="--d:5"></span>
+    </div>
+  </section>
+
+  <!-- Results get rendered here by script.js -->
+  <section id="results" class="results" aria-live="polite" aria-busy="false"></section>
+
+  <section id="how" class="band">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>
+        <h3>You type an address</h3>
+        <p>It's matched to a location using the U.S. Census Bureau's free
+        geocoder. Nothing is saved and nothing is sent to us.</p>
+      </li>
+      <li>
+        <h3>We check who serves it</h3>
+        <p>Your location is checked against Arizona's official water
+        provider service-area boundaries, then against the EPA's record of
+        drinking-water violations for that provider.</p>
+      </li>
+      <li>
+        <h3>We show you where to go</h3>
+        <p>For communities we've researched, you get real places to get
+        water: standpipes and haulers, with hours and phone numbers.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="why" class="band band-alt">
+    <div class="why-grid">
+      <div>
+        <h2>Why this exists</h2>
+        <p>
+          On January 1, 2023, Scottsdale cut off the hauled water that
+          hundreds of homes in Rio Verde Foothills depended on. Those
+          residents had no municipal provider, no city to call, and no
+          single place to find out what their options were.
+        </p>
+        <p>
+          The information that would have helped them existed, but it was
+          scattered: haulers advertised on their own, federal compliance
+          data sat in a database nobody browses, and neighbors ended up
+          building their own website because nothing else covered it.
+        </p>
+        <p>
+          This site pulls those pieces into one answer. It starts with Rio
+          Verde Foothills because that's where the need was clearest and
+          where real places to get water could be verified by hand.
+        </p>
+      </div>
+      <aside class="callout">
+        <h3>Know a water source we're missing?</h3>
+        <p>
+          No government agency keeps a list of haulers and standpipes. This
+          directory is built by hand, which means it's incomplete by
+          default. If you know a source that should be here, tell us.
+        </p>
+        <a class="btn-outline" href="mailto:sidaksmann@gmail.com?subject=Water%20source%20suggestion">Suggest a water source</a>
+      </aside>
+    </div>
+  </section>
+
+  <section id="data" class="band">
+    <h2>Where the data comes from</h2>
+    <p class="band-lede">
+      Every number on this site traces back to a public source. Here's each
+      one, and what it can't tell you.
+    </p>
+    <div class="sources">
+      <article>
+        <h3>Places to get water</h3>
+        <p class="src">Hand-researched, verified individually</p>
+        <p>No agency maintains this list. Each entry shows where its details
+        came from and when they were checked. Call ahead before driving out.</p>
+      </article>
+      <article>
+        <h3>Your water provider</h3>
+        <p class="src">ADWR Community Water System service areas</p>
+        <p>Official service-area boundaries. If your address falls outside
+        every boundary, you have no municipal provider, which is itself the
+        answer.</p>
+      </article>
+      <article>
+        <h3>Safety violations</h3>
+        <p class="src">EPA SDWIS via ECHO</p>
+        <p>Federal drinking-water compliance records. A violation is not
+        automatically a health emergency, and no violations on record does
+        not guarantee water is safe today.</p>
+      </article>
+      <article>
+        <h3>Regulatory context</h3>
+        <p class="src">ADWR AMA/INA, AAWS, GWSI</p>
+        <p>Whether you're in a managed groundwater area, whether your
+        subdivision proved a 100-year supply, and monitored wells nearby.
+        Background, not a verdict on your water.</p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="disclaimer">
+      <strong>Please read:</strong> This is an independent project, not a
+      government service and not affiliated with any water utility. The
+      information here is gathered from public records and hand research,
+      and it can be out of date or incomplete. Always call a water source
+      before relying on it. In an emergency, contact your county emergency
+      management office.
+    </p>
+    <p class="colophon">
+      Built in Arizona · Data from ADWR, EPA, and the U.S. Census Bureau ·
+      <a href="mailto:sidaksmann@gmail.com">Get in touch</a>
+    </p>
+  </div>
+</footer>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

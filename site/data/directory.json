@@ -1,0 +1,69 @@
+{
+  "_README": "Hand-curated water access points. No government agency maintains this list, which is why this file exists. Every entry carries its own provenance: `sourced` is where the detail came from and when; `needs_call` means a human has not yet phoned to confirm it is current. Never flip needs_call to false without actually calling. Prices and service areas change.",
+  "_last_reviewed": "2026-08-12",
+  "communities": [
+    {
+      "id": "rio-verde-foothills",
+      "name": "Rio Verde Foothills",
+      "county": "Maricopa",
+      "note": "Unincorporated area with no municipal water provider. Homes rely on hauled water or exempt wells. Scottsdale cut off hauled-water access on January 1, 2023; EPCOR opened a permanent standpipe on January 1, 2026.",
+      "bbox": [-111.80, 33.68, -111.55, 33.86],
+      "entries": [
+        {
+          "name": "EPCOR Rio Verde Foothills Water Facility",
+          "type": "standpipe",
+          "what": "Permanent water filling station. This is the standpipe that replaced the Scottsdale supply cut off in 2023.",
+          "address": "176th Street, south of Rio Verde Drive, Scottsdale, AZ",
+          "lat": 33.7385,
+          "lon": -111.6989,
+          "coordinates_approximate": true,
+          "hours": "Daily, 7:00 am to 6:00 pm",
+          "phone": "1-800-383-0834",
+          "email": "mywater@epcor.com",
+          "website": "https://www.epcor.com/us/en/",
+          "access": "Requires an EPCOR customer account and an access PIN. You cannot just drive up and fill without signing up first.",
+          "opened": "2026-01-01",
+          "sourced": "EPCOR media release and AZFamily coverage, checked 2026-08-12",
+          "needs_call": true
+        },
+        {
+          "name": "Rio Verde Foothills Potable Water Hauling, LLC",
+          "type": "hauler",
+          "what": "Delivers bulk potable water to residential holding tanks. Family owned, has served the area for 18+ years.",
+          "address": "28150 N Alma School Pkwy, Scottsdale, AZ 85262",
+          "lat": 33.735936,
+          "lon": -111.846252,
+          "coordinates_approximate": false,
+          "hours": null,
+          "phone": null,
+          "website": "https://www.rioverdewater.com/",
+          "access": "Call to arrange delivery to your tank.",
+          "sourced": "Business listings and company site, checked 2026-08-12",
+          "needs_call": true
+        },
+        {
+          "name": "Dynamite Water",
+          "type": "hauler",
+          "what": "Delivers bulk potable water to residential holding tanks. Says water is sanitized by the supplier and trucks are maintained to State of Arizona standards.",
+          "address": null,
+          "lat": null,
+          "lon": null,
+          "coordinates_approximate": true,
+          "hours": null,
+          "phone": "(602) 620-9667",
+          "website": "https://www.dynamitewater.com/",
+          "access": "Call for a service quote. Has served Rio Verde Foothills for 16+ years.",
+          "sourced": "dynamitewater.com questions-answers page, checked 2026-08-12",
+          "needs_call": true
+        }
+      ],
+      "also_see": [
+        {
+          "name": "rvfhaswater.com",
+          "what": "A resource built by Rio Verde Foothills residents themselves during the 2023 cutoff. Worth checking for community updates this directory may not have.",
+          "website": "https://rvfhaswater.com"
+        }
+      ]
+    }
+  ]
+}

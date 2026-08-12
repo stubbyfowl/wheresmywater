@@ -1,0 +1,14 @@
+# Raw ADWR/EPA downloads -- 450MB+, regenerate with `python fetch_data.py`.
+# Leading slash matters: site/data/*.json is the built output the deployed
+# site actually reads, and it MUST be committed.
+/data/
+fetch_log.txt
+
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Project strategy notes -- outreach plans, press targets, records-request
+# reference numbers. Deliberately kept out of the public repo.
+wmwRoadmap*.md
