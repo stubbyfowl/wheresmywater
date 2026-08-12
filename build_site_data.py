@@ -29,6 +29,11 @@ os.makedirs(OUT_DIR, exist_ok=True)
 # file size a lot without moving any boundary meaningfully.
 SIMPLIFY_DEG = 0.0001
 
+# EPA violation records go back decades. Anything from this year onward is
+# reported separately as "recent" so an old, long-resolved problem isn't
+# presented as a current warning.
+RECENT_SINCE_YEAR = 2021
+
 
 def write_geojson(gdf: gpd.GeoDataFrame, keep_cols: list[str], out_name: str,
                   simplify: float = SIMPLIFY_DEG):
@@ -144,10 +149,21 @@ def build_violations():
     with zipfile.ZipFile(zip_path) as z:
         names = z.namelist()
         print(f"  zip contains {len(names)} files: {names[:12]}")
-        viol_name = next((n for n in names if "VIOLATION" in n.upper() and n.upper().endswith(".CSV")), None)
-        sys_name = next((n for n in names if "SYSTEM" in n.upper() and n.upper().endswith(".CSV")), None)
+        # Name the tables exactly. Matching on "VIOLATION" alone also hits
+        # SDWA_PN_VIOLATION_ASSOC.csv, which is the public-notification
+        # linkage table, not the violations themselves -- counting that
+        # silently reports the wrong numbers.
+        def pick(*wanted):
+            for w in wanted:
+                for n in names:
+                    if n.upper().endswith(w):
+                        return n
+            return None
+
+        viol_name = pick("SDWA_VIOLATIONS_ENFORCEMENT.CSV")
+        sys_name = pick("SDWA_PUB_WATER_SYSTEMS.CSV")
         if not viol_name or not sys_name:
-            print("  could not find expected CSVs in zip")
+            print(f"  could not find expected CSVs in zip: {names}")
             return
         print(f"  using {sys_name} + {viol_name}")
 
@@ -157,30 +173,48 @@ def build_violations():
                 pwsid = (row.get("PWSID") or "").strip()
                 if not pwsid.upper().startswith("AZ"):
                     continue
+                # Deactivated systems still carry decades of history. Showing
+                # that against a live address would be answering about a
+                # utility that no longer exists.
+                if (row.get("PWS_ACTIVITY_CODE") or "").strip().upper() != "A":
+                    continue
                 systems[pwsid] = {
                     "name": (row.get("PWS_NAME") or "").strip(),
                     "population": (row.get("POPULATION_SERVED_COUNT") or "").strip(),
+                    "type": (row.get("PWS_TYPE_CODE") or "").strip(),
                     "violations": 0,
                     "health_based": 0,
+                    "recent_5yr": 0,
+                    "unresolved": 0,
                     "recent": [],
                 }
-        print(f"  {len(systems)} Arizona water systems")
+        print(f"  {len(systems)} active Arizona water systems")
 
+        # EPA's records run back to the 1980s. "12 violations on record" with
+        # no timeframe reads as a live warning when it may all predate the
+        # visitor's birth, so recency and open/closed status get counted
+        # separately.
         with z.open(viol_name) as fh:
             for row in csv.DictReader(io.TextIOWrapper(fh, encoding="utf-8", errors="replace")):
                 s = systems.get((row.get("PWSID") or "").strip())
                 if not s:
                     continue
                 s["violations"] += 1
-                health = (row.get("IS_HEALTH_BASED_IND") or "").strip().upper() == "Y"
-                if health:
+                began = (row.get("NON_COMPL_PER_BEGIN_DATE") or "").strip()
+                year = int(began[-4:]) if len(began) >= 4 and began[-4:].isdigit() else None
+                if year and year >= RECENT_SINCE_YEAR:
+                    s["recent_5yr"] += 1
+                status = (row.get("VIOLATION_STATUS") or "").strip()
+                if status.lower() in ("unaddressed", "addressed"):
+                    s["unresolved"] += 1
+                if (row.get("IS_HEALTH_BASED_IND") or "").strip().upper() == "Y":
                     s["health_based"] += 1
-                    if len(s["recent"]) < 5:
+                    if len(s["recent"]) < 5 and year and year >= RECENT_SINCE_YEAR:
                         s["recent"].append({
                             "contaminant": (row.get("CONTAMINANT_CODE") or "").strip(),
                             "type": (row.get("VIOLATION_CATEGORY_CODE") or "").strip(),
-                            "began": (row.get("NON_COMPL_PER_BEGIN_DATE") or "").strip(),
-                            "status": (row.get("VIOLATION_STATUS") or "").strip(),
+                            "began": began,
+                            "status": status,
                         })
 
     path = os.path.join(OUT_DIR, "violations.json")

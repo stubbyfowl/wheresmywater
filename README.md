@@ -28,10 +28,39 @@ sent to us.
 
 ```
 fetch_data.py       downloads raw ADWR data (~450MB) -> data/
-build_site_data.py  trims it to what the browser needs -> site/data/ (~1.4MB)
+build_site_data.py  trims it to what the browser needs -> site/data/
+build_haulers.py    discovers candidate water haulers statewide -> site/data/haulers.json
 site/               the actual website, deployed to GitHub Pages
 app.py              optional FastAPI version of the lookup, for local use
 ```
+
+## Finding water haulers statewide
+
+Arizona has no registry of water haulers. Potable water hauling is
+permitted vehicle-by-vehicle at the **county** level (Maricopa County
+Environmental Health Code Ch. V §2, A.A.C. R18-4-125), and the county
+portals don't publish those lists — Maricopa's public lookup exposes only
+restaurants and swimming pools.
+
+Haulers do, however, drive trucks, which means they register with FMCSA.
+`build_haulers.py` queries the federal motor carrier census for Arizona
+carriers whose names suggest water hauling: **74 candidates, 46 of them
+high-confidence, across 36 cities.**
+
+This is a *discovery* source, not a verified directory, and the difference
+matters because someone may drive a long way on it:
+
+- Name matching is a heuristic. "Winston Water Cooler" is a plumbing
+  supplier; "Buckeye Water Conservation & Drainage District" is an
+  irrigation district. Both contain "water", both are excluded.
+- A registered carrier may no longer haul water, may only do construction
+  water, or may not serve your area.
+- Coordinates are **city centroids**, not service areas. A hauler 40 miles
+  out may serve you; one 5 miles out may not.
+
+So every record carries `needs_call: true` and a confidence rating, and
+must be presented as a lead to call rather than a confirmed source.
+`python build_haulers.py --check` runs the classifier's regression test.
 
 ## Running it
 

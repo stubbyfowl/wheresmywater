@@ -30,6 +30,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check lookup geometry
         run: node site/test.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check hauler classifier
+        run: python build_haulers.py --check
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
