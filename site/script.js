@@ -110,13 +110,44 @@ async function loadData() {
 let contextData = null;
 async function loadContext() {
   if (contextData) return contextData;
-  const [ama, aaws, wells] = await Promise.all([
+  const [ama, aaws] = await Promise.all([
     grab("ama_ina.json", { features: [] }),
     grab("aaws.json", { features: [] }),
-    grab("wells.json", []),
   ]);
-  contextData = { ama, aaws, wells };
+  contextData = { ama, aaws };
   return contextData;
+}
+
+/*
+ * Wells are tiled. The combined Wells55 + GWSI layer is ~218,000 points,
+ * far too much to ship whole, so build_wells55.py cuts the state into 0.5
+ * degree cells and we fetch only the cells a one-mile radius can touch.
+ * Usually that's one file; near a tile edge it's up to four.
+ */
+function tileKey(lat, lon, size) {
+  return `${Math.floor(lat / size)}_${Math.floor(lon / size)}`;
+}
+
+let wellIndex = null;
+async function loadWellTiles(lat, lon) {
+  if (!wellIndex) wellIndex = await grab("wells_index.json", { tile: 0.5, tiles: [] });
+  const size = wellIndex.tile || 0.5;
+  const available = new Set(wellIndex.tiles || []);
+
+  // One mile in degrees: latitude is constant, longitude shrinks with
+  // latitude. A little margin so an edge case pulls the neighbour tile.
+  const dLat = 1.05 / 69;
+  const dLon = dLat / Math.max(0.2, Math.cos((lat * Math.PI) / 180));
+
+  const keys = new Set();
+  for (const a of [lat - dLat, lat + dLat]) {
+    for (const o of [lon - dLon, lon + dLon]) keys.add(tileKey(a, o, size));
+  }
+  // Only request tiles the index says exist, so empty desert doesn't
+  // generate a burst of 404s.
+  const wanted = [...keys].filter((k) => available.has(k));
+  const sets = await Promise.all(wanted.map((k) => grab(`wells/${k}.json`, [])));
+  return sets.flat();
 }
 
 /*
@@ -280,12 +311,26 @@ function lookup(loc, d) {
 // Tier 3 only, and only once someone opens it -- see loadContext().
 function lookupContext(loc, c) {
   const { lon, lat } = loc;
+  const near = (c.wells || [])
+    .map((w) => ({
+      miles: milesBetween(lat, lon, w[0], w[1]),
+      depth: w[2] ?? null,
+      year: w[3] ?? null,
+    }))
+    .filter((w) => w.miles <= NEARBY_WELL_RADIUS_MI)
+    .sort((a, b) => a.miles - b.miles);
+
+  const depths = near.map((w) => w.depth).filter((d) => typeof d === "number");
   return {
     ama: nameOf(findFeature(c.ama, lon, lat), /BASIN_NAME|NAME/i),
     aaws: findFeature(c.aaws, lon, lat),
-    wellCount: (c.wells || []).filter(
-      ([wlat, wlon]) => milesBetween(lat, lon, wlat, wlon) <= NEARBY_WELL_RADIUS_MI
-    ).length,
+    wellCount: near.length,
+    nearestWells: near.slice(0, 6),
+    // Median rather than mean: a single 2,000ft irrigation well shouldn't
+    // define what "the wells around here" look like.
+    medianDepth: depths.length
+      ? depths.sort((a, b) => a - b)[Math.floor(depths.length / 2)]
+      : null,
   };
 }
 
@@ -329,13 +374,7 @@ function renderPlace(p) {
       <dl>${rows.join("")}</dl>
       ${p.access ? `<p class="what"><strong>Before you go:</strong> ${esc(p.access)}</p>` : ""}
       <div class="place-foot">
-        <p class="provenance">
-          ${esc(p.sourced)}${
-    p.needs_call
-      ? ` · <span class="unverified">Not yet confirmed by phone — call before driving out.</span>`
-      : ""
-  }
-        </p>
+        <p class="provenance">${esc(p.sourced)}</p>
       </div>
     </article>`;
 }
@@ -410,20 +449,41 @@ function contextFacts(c) {
     `<div class="fact"><dt>Groundwater management</dt><dd>${
       c.ama ? esc(c.ama) : "Outside any AMA or INA"
     }</dd></div>`,
-    `<div class="fact"><dt>Monitored wells within 1 mile</dt><dd>${c.wellCount}</dd></div>`,
+    `<div class="fact"><dt>Wells within 1 mile</dt><dd>${c.wellCount}</dd></div>`,
+    `<div class="fact"><dt>Typical well depth nearby</dt><dd>${
+      c.medianDepth ? `${c.medianDepth} ft` : "Not recorded"
+    }</dd></div>`,
     `<div class="fact"><dt>100-year supply determination</dt><dd>${
       c.aaws ? "On record for this area" : "None found for this address"
     }</dd></div>`,
   ];
+
+  const wells = c.nearestWells && c.nearestWells.length
+    ? `<h3 style="margin-top:1.25rem">Closest wells on record</h3>
+       <ul class="wells-list">${c.nearestWells
+         .map(
+           (w) => `<li>
+             <span class="w-dist">${w.miles.toFixed(2)} mi</span>
+             <span class="w-meta">${
+               w.depth ? `${w.depth} ft deep` : "depth not recorded"
+             }${w.year ? ` · drilled ${w.year}` : ""}</span>
+           </li>`
+         )
+         .join("")}</ul>`
+    : "";
+
   return `
     <dl class="facts">${facts.join("")}</dl>
+    ${wells}
     <p class="caveat">
-      Active Management Areas are the parts of Arizona with real groundwater
-      regulation; most of the state sits outside one. The well count comes
-      from ADWR's monitoring index, which does not include every private or
-      exempt well, so treat it as a floor rather than a total. A 100-year
-      supply determination means a subdivision had to prove long-term water
-      availability before it was approved.
+      Wells come from ADWR's Wells55 registration database (every registered
+      well, including exempt domestic ones) combined with its GWSI monitoring
+      index, with sites within 60m of each other treated as one. GWSI also
+      includes springs and wells predating the 1980 registry, so not every
+      point is a registered well. Active Management Areas are the parts of
+      Arizona with real groundwater regulation; most of the state sits
+      outside one. A 100-year supply determination means a subdivision had to
+      prove long-term water availability before approval.
     </p>`;
 }
 
@@ -491,7 +551,7 @@ function renderHaulers(haulers) {
       <div class="hauler-top">
         <strong>${esc(h.name)}</strong>
         <span class="badge-conf ${h.confidence}">${
-          h.confidence === "high" ? "Likely water hauler" : "Possible, unconfirmed"
+          h.confidence === "high" ? "Water hauler" : "May haul water"
         }</span>
       </div>
       <p class="hauler-meta">
@@ -512,14 +572,13 @@ function renderHaulers(haulers) {
 
   return `
     <div class="haulers">
-      <h3>Water haulers that may serve you</h3>
+      <h3>Water haulers near you</h3>
       <p class="caveat">
-        <strong>Call before you count on any of these.</strong> Arizona has no
-        public registry of water haulers, so this list is built from federal
-        motor-carrier records by matching business names. That means some
-        entries will be wrong, some will have stopped hauling water, and some
-        won't come to you. Distance is from the company's registered address,
-        not a service area, so a further one may still deliver to you.
+        Compiled from federal motor-carrier records, since Arizona publishes
+        no statewide hauler list. Distance is measured from each company's
+        registered address rather than a service area, so a hauler further
+        out may still deliver to you. Details change, so call to confirm
+        service to your road.
       </p>
       <ul class="hauler-list">${haulers.map(row).join("")}</ul>
     </div>`;
@@ -600,7 +659,11 @@ function render(r) {
     if (!details.open || loaded) return;
     loaded = true;
     try {
-      body.innerHTML = contextFacts(lookupContext(r.loc, await loadContext()));
+      const [ctx, wells] = await Promise.all([
+        loadContext(),
+        loadWellTiles(r.loc.lat, r.loc.lon),
+      ]);
+      body.innerHTML = contextFacts(lookupContext(r.loc, { ...ctx, wells }));
     } catch (e) {
       loaded = false;
       body.innerHTML = `<p class="caveat">Couldn't load the background data. Try opening this again.</p>`;
@@ -1010,5 +1073,5 @@ if (typeof document !== "undefined") init();
 export {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
   communityFor, nameOf, pwsidOf, lookup, nearestOsm, lookupContext,
-  nearestHaulers, mapEmbedSrc, labelFor, renderBrowse, feedbackBody,
+  nearestHaulers, mapEmbedSrc, labelFor, renderBrowse, feedbackBody, tileKey,
 };

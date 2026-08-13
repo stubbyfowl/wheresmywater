@@ -11,6 +11,7 @@ import {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
   communityFor, nameOf, pwsidOf, nearestOsm, lookupContext,
   nearestHaulers, mapEmbedSrc, labelFor, lookup, renderBrowse, feedbackBody,
+  tileKey,
 } from "./script.js";
 
 const square = [[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]];
@@ -71,22 +72,36 @@ assert.ok(near[0].miles < near[1].miles, "sorted by distance");
 assert.equal(nearestOsm(33.7415, -111.709, osm, 1).length, 1, "limit is honoured");
 assert.deepEqual(nearestOsm(33.7, -111.7, []), [], "no points -> empty, not a crash");
 
-// Wells ship as bare [lat,lon] pairs to save payload; counting must match
-// that shape, and must count a radius rather than a bounding box.
+// Tile keys MUST match build_wells55.py's tile_key(), or the browser asks
+// for files the build never wrote and every well count silently reads 0.
+// These expectations are duplicated in that script's --check.
+assert.equal(tileKey(33.7415, -111.709, 0.5), "67_-224");
+assert.equal(tileKey(33.9999, -111.709, 0.5), "67_-224");
+assert.equal(tileKey(34.0001, -111.709, 0.5), "68_-224", "crossing a tile edge moves tiles");
+
+// Wells ship as [lat,lon,depth,year] rows; counting must use a radius, not
+// a bounding box, and must tolerate missing depths.
 const ctx = lookupContext(
   { lat: 33.7415, lon: -111.709 },
   {
     ama: { features: [] },
     aaws: { features: [] },
     wells: [
-      [33.7420, -111.7095], // ~0.04mi
-      [33.7500, -111.7100], // ~0.6mi
-      [34.5000, -111.7000], // ~52mi
+      [33.7420, -111.7095, 300, 2001], // ~0.04mi
+      [33.7500, -111.7100, 100, null], // ~0.6mi
+      [33.7460, -111.7090, null, null], // ~0.31mi, depth unknown
+      [34.5000, -111.7000, 500, 1990], // ~52mi, out of range
     ],
   }
 );
-assert.equal(ctx.wellCount, 2, "counts wells within a mile, ignores the far one");
+assert.equal(ctx.wellCount, 3, "counts wells within a mile, ignores the far one");
 assert.equal(ctx.ama, null, "no AMA match -> null, rendered as 'outside any AMA'");
+assert.equal(ctx.nearestWells[0].depth, 300, "nearest well first");
+assert.ok(ctx.nearestWells[0].miles < ctx.nearestWells[1].miles, "sorted by distance");
+assert.equal(ctx.medianDepth, 300, "median ignores wells with no recorded depth");
+const empty = lookupContext({ lat: 33.7, lon: -111.7 }, { ama: { features: [] }, aaws: { features: [] } });
+assert.equal(empty.wellCount, 0, "no tiles loaded -> 0, not a crash");
+assert.equal(empty.medianDepth, null);
 
 // Haulers: high confidence outranks a merely-plausible closer one, because
 // a wrong lead costs a wasted phone call.

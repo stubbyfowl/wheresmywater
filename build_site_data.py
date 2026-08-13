@@ -90,41 +90,6 @@ def build_boundaries():
     )
 
 
-def build_wells():
-    """
-    Well points near the launch area only. The statewide GWSI export is
-    46,890 sites; the site only needs enough to answer "how many wells are
-    near this address," so clip to the launch bbox before shipping.
-    """
-    print("Wells...")
-    import glob
-
-    shp = glob.glob(os.path.join(DATA_DIR, "gwsi_wells", "**", "GWSI_SITES.shp"), recursive=True)
-    if not shp:
-        print("  no GWSI shapefile found, skipping")
-        return
-    w = gpd.read_file(shp[0]).to_crs(epsg=4326)
-    # Statewide now. Stored as bare [lat,lon] pairs at 4dp (~11m) rather
-    # than {"lat":..,"lon":..} objects: the key names cost more bytes than
-    # the coordinates, and the layer only feeds a count within a mile.
-    # Some GWSI sites carry infinite coordinates after reprojection. Python's
-    # json.dump writes those as bare `Infinity`, which is NOT valid JSON:
-    # JSON.parse throws on it, so a single bad row silently takes the whole
-    # file down in the browser and the well count reads 0 everywhere. Drop them.
-    out = [
-        [round(geom.y, 4), round(geom.x, 4)]
-        for geom in w.geometry
-        if geom is not None
-        and not geom.is_empty
-        and math.isfinite(geom.x)
-        and math.isfinite(geom.y)
-    ]
-    path = os.path.join(OUT_DIR, "wells.json")
-    with open(path, "w") as f:
-        json.dump(out, f, separators=(",", ":"))
-    print(f"  wells.json: {len(out):,} wells, {os.path.getsize(path):,} bytes")
-
-
 def build_violations():
     """
     Arizona drinking-water violations from EPA's ECHO SDWA bulk download.
@@ -344,7 +309,6 @@ def report_payload():
 
 if __name__ == "__main__":
     build_boundaries()
-    build_wells()
     build_osm_water()
     build_violations()
     verify_outputs()

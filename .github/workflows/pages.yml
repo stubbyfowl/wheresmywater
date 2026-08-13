@@ -35,6 +35,11 @@ jobs:
           python-version: '3.12'
       - name: Check hauler classifier
         run: python build_haulers.py --check
+      # The JS computes tile keys independently; if the two ever disagree the
+      # browser requests files that were never written and every well count
+      # silently reads zero.
+      - name: Check well tiling
+        run: python build_wells55.py --check
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
