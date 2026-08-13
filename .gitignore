@@ -12,3 +12,5 @@ __pycache__/
 # Project strategy notes -- outreach plans, press targets, records-request
 # reference numbers. Deliberately kept out of the public repo.
 wmwRoadmap*.md
+
+origin-story.md
