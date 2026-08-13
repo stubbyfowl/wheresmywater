@@ -1,4 +1,4 @@
-/* Where's My Water — styles
+/* Where's My Water: styles
  *
  * Water-themed: blues, white, light grays. The interface should feel calm
  * and get out of the way, because people arrive here with a problem rather
@@ -347,6 +347,22 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 .browse-table th { font: 500 .6875rem/1.5 var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); background: var(--surface); }
 .browse-table tr:last-child td { border-bottom: 0; }
 .browse-table tbody tr:hover { background: var(--blue-tint); }
+
+.browse-more { margin-top: .625rem; }
+.browse-more summary {
+  cursor: pointer; list-style: none; display: inline-block;
+  padding: .5rem .875rem; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--white); color: var(--blue); font-weight: 600; font-size: .9375rem;
+}
+.browse-more summary::-webkit-details-marker { display: none; }
+.browse-more summary:hover { border-color: var(--blue); background: var(--blue-tint); }
+.browse-more[open] summary { margin-bottom: .625rem; }
+.browse-more .browse-table thead { display: none; }
+
+.byline {
+  font: 500 .875rem/1 var(--mono); color: var(--ink-faint);
+  margin-top: 1.5rem;
+}
 
 /* ---------- feedback ---------- */
 

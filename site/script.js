@@ -1,4 +1,4 @@
-/* Where's My Water — client-side lookup
+/* Where's My Water: client-side lookup
  *
  * The whole lookup runs in the browser. That's deliberate: the site is
  * static (GitHub Pages), so there's no server to run, pay for, or keep
@@ -155,7 +155,7 @@ async function loadWellTiles(lat, lon) {
  * plain fetch() is blocked by the browser. It does support JSONP, which is
  * why this injects a script tag instead. JSONP means executing whatever
  * that host returns, which is only acceptable because it's a fixed US
- * government endpoint we control the URL of -- never point this at a
+ * government endpoint we control the URL of. Never point this at a
  * user-supplied host. The alternative was proxying through a server, which
  * would mean having a server at all.
  */
@@ -391,7 +391,7 @@ function renderProvider(r) {
         tank, or a private well.</p>
         <p class="caveat">Source: ADWR Community Water System service areas.
         If you believe you do have a provider, they may serve you outside
-        their mapped boundary — check a recent water bill.</p>
+        their mapped boundary, so check a recent water bill.</p>
       </div>`;
   }
 
@@ -608,7 +608,7 @@ function render(r) {
          .map(
            (s) =>
              `<p class="provenance" style="margin-top:1rem">Also worth checking:
-              <a href="${esc(s.website)}" rel="noopener">${esc(s.name)}</a> — ${esc(s.what)}</p>`
+              <a href="${esc(s.website)}" rel="noopener">${esc(s.name)}</a>. ${esc(s.what)}</p>`
          )
          .join("")}
        ${renderHaulers(r.haulers)}
@@ -915,36 +915,52 @@ function renderBrowse(haulers, { city, confidence, q }) {
   );
 }
 
+// How many rows to show before the rest are folded away. The full list is
+// 74 companies, which is a lot of scrolling past for someone who only
+// wanted to check whether their county has anyone at all.
+const BROWSE_PREVIEW = 5;
+
+function browseRow(h) {
+  return `
+    <tr>
+      <td>${esc(h.name)}</td>
+      <td>${esc(h.city || "not listed")}</td>
+      <td>${
+        h.phone
+          ? `<a href="tel:${esc(h.phone.replace(/[^\d+]/g, ""))}">${esc(h.phone)}</a>`
+          : "not listed"
+      }</td>
+      <td><span class="badge-conf ${h.confidence}">${
+        h.confidence === "high" ? "Water hauler" : "May haul water"
+      }</span></td>
+    </tr>`;
+}
+
 function browseMarkup(rows) {
   if (!rows.length) {
     return `<p class="status">Nothing matches that. Try clearing a filter.</p>`;
   }
+  const head = `<tr><th scope="col">Name</th><th scope="col">Based in</th>
+      <th scope="col">Phone</th><th scope="col">Type</th></tr>`;
+  const shown = rows.slice(0, BROWSE_PREVIEW);
+  const rest = rows.slice(BROWSE_PREVIEW);
+
   return `
     <table class="browse-table">
-      <thead>
-        <tr><th scope="col">Name</th><th scope="col">Based in</th>
-            <th scope="col">Phone</th><th scope="col">Confidence</th></tr>
-      </thead>
-      <tbody>
-        ${rows
-          .map(
-            (h) => `
-          <tr>
-            <td>${esc(h.name)}</td>
-            <td>${esc(h.city || "—")}</td>
-            <td>${
-              h.phone
-                ? `<a href="tel:${esc(h.phone.replace(/[^\d+]/g, ""))}">${esc(h.phone)}</a>`
-                : "—"
-            }</td>
-            <td><span class="badge-conf ${h.confidence}">${
-              h.confidence === "high" ? "Likely" : "Possible"
-            }</span></td>
-          </tr>`
-          )
-          .join("")}
-      </tbody>
-    </table>`;
+      <thead>${head}</thead>
+      <tbody>${shown.map(browseRow).join("")}</tbody>
+    </table>
+    ${
+      rest.length
+        ? `<details class="browse-more">
+             <summary>Show ${rest.length} more</summary>
+             <table class="browse-table">
+               <thead>${head}</thead>
+               <tbody>${rest.map(browseRow).join("")}</tbody>
+             </table>
+           </details>`
+        : ""
+    }`;
 }
 
 async function initBrowse() {
