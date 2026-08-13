@@ -15,6 +15,7 @@ Run fetch_data.py first, then:
 """
 
 import json
+import math
 import os
 import zipfile
 
@@ -106,10 +107,17 @@ def build_wells():
     # Statewide now. Stored as bare [lat,lon] pairs at 4dp (~11m) rather
     # than {"lat":..,"lon":..} objects: the key names cost more bytes than
     # the coordinates, and the layer only feeds a count within a mile.
+    # Some GWSI sites carry infinite coordinates after reprojection. Python's
+    # json.dump writes those as bare `Infinity`, which is NOT valid JSON:
+    # JSON.parse throws on it, so a single bad row silently takes the whole
+    # file down in the browser and the well count reads 0 everywhere. Drop them.
     out = [
         [round(geom.y, 4), round(geom.x, 4)]
         for geom in w.geometry
-        if geom is not None and not geom.is_empty
+        if geom is not None
+        and not geom.is_empty
+        and math.isfinite(geom.x)
+        and math.isfinite(geom.y)
     ]
     path = os.path.join(OUT_DIR, "wells.json")
     with open(path, "w") as f:
@@ -295,6 +303,29 @@ def build_osm_water():
     print(f"  osm_water.json: {len(out):,} points, {os.path.getsize(path):,} bytes")
 
 
+def verify_outputs():
+    """
+    Every file we ship must survive a strict JSON parser.
+
+    Python's json.dump happily writes NaN/Infinity, which JSON.parse rejects,
+    so a single bad coordinate turns into a whole layer silently missing in
+    the browser. That exact bug shipped once. Fail the build instead.
+    """
+    print("\nVerifying output is valid JSON...")
+    bad = []
+    for name in sorted(os.listdir(OUT_DIR)):
+        path = os.path.join(OUT_DIR, name)
+        with open(path) as f:
+            text = f.read()
+        try:
+            json.loads(text, parse_constant=lambda c: (_ for _ in ()).throw(ValueError(c)))
+        except ValueError as e:
+            bad.append(f"{name}: {e}")
+    if bad:
+        raise SystemExit("INVALID JSON, would break the site:\n  " + "\n  ".join(bad))
+    print("  all files parse strictly")
+
+
 def report_payload():
     """What a visitor actually downloads. Keep an eye on this."""
     print("\nPayload shipped to the browser:")
@@ -316,5 +347,6 @@ if __name__ == "__main__":
     build_wells()
     build_osm_water()
     build_violations()
+    verify_outputs()
     report_payload()
     print("\nDone -> site/data/")
