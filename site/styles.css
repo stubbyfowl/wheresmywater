@@ -368,6 +368,27 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 .form-actions button[type="submit"]:hover { background: var(--blue-dark); }
 .feedback-form .caveat { grid-column: 1 / -1; }
 
+/* ---------- sub-pages ---------- */
+
+.backlink {
+  display: inline-block; margin-bottom: 1.25rem;
+  font-size: .9375rem; font-weight: 500; text-decoration: none; color: var(--blue);
+}
+.backlink::before { content: "\2190  "; }
+.backlink:hover { text-decoration: underline; }
+
+.datasrc { padding: 1.5rem 0; border-top: 1px solid var(--line); }
+.datasrc:first-of-type { border-top: 0; padding-top: 0; }
+.datasrc h2 { font-size: 1.375rem; margin-bottom: .25rem; }
+.datasrc .src { font: 500 .8125rem/1.5 var(--mono); color: var(--blue); margin-bottom: .75rem; }
+.datasrc p { color: var(--ink-soft); max-width: 46rem; }
+.datasrc .limits {
+  background: var(--surface); border-left: 3px solid var(--line);
+  padding: .875rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: .9375rem; margin-bottom: 0;
+}
+.datasrc .limits strong { color: var(--ink); }
+
 /* ---------- footer ---------- */
 
 .site-footer { background: var(--blue-deep); color: #c3d4e4; margin-top: 3rem; }

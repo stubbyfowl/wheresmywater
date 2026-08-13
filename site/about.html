@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — Where's My Water</title>
+<meta name="description" content="Why this Arizona water directory exists and how the lookup works.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Where's My Water</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="index.html#browse">Browse</a>
+    <a href="index.html#guide">What to do</a>
+    <a href="about.html">About</a>
+    <a href="add.html">Add a source</a>
+    <a href="data.html">Data sources</a>
+  </nav>
+</header>
+
+<main id="main">
+  <div class="band">
+    <a class="backlink" href="index.html">Back to search</a>
+    <h1>About this directory</h1>
+  </div>
+
+  <section class="band">
+    <div class="why-grid">
+      <div>
+        <h2>Why this exists</h2>
+        <p>
+          On January 1, 2023, Scottsdale cut off the hauled water that
+          hundreds of homes in Rio Verde Foothills depended on. Those
+          residents had no municipal provider, no city to call, and no
+          single place to find out what their options were.
+        </p>
+        <p>
+          The information that would have helped them existed, but it was
+          scattered: haulers advertised on their own, federal compliance
+          data sat in a database nobody browses, and neighbors ended up
+          building their own website because nothing else covered it.
+        </p>
+        <p>
+          This site pulls those pieces into one answer. It starts with Rio
+          Verde Foothills because that's where the need was clearest and
+          where real places to get water could be verified by hand.
+        </p>
+      </div>
+      <aside class="callout">
+        <h3>Know a water source we're missing?</h3>
+        <p>
+          No government agency keeps a list of haulers and standpipes. This
+          directory is built by hand, which means it's incomplete by
+          default. If you know a source that should be here, tell us.
+        </p>
+        <a class="btn-outline" href="mailto:sidaksmann@gmail.com?subject=Water%20source%20suggestion">Suggest a water source</a>
+      </aside>
+    </div>
+  
+  </section>
+
+  <section class="band band-alt">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>
+        <h3>You type an address</h3>
+        <p>It's matched to a location using the U.S. Census Bureau's free
+        geocoder. Nothing is saved and nothing is sent to us.</p>
+      </li>
+      <li>
+        <h3>We check who serves it</h3>
+        <p>Your location is checked against Arizona's official water
+        provider service-area boundaries, then against the EPA's record of
+        drinking-water violations for that provider.</p>
+      </li>
+      <li>
+        <h3>We show you where to go</h3>
+        <p>For communities we've researched, you get real places to get
+        water: standpipes and haulers, with hours and phone numbers.</p>
+      </li>
+    </ol>
+  
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="disclaimer">
+      <strong>Please read:</strong> This is an independent project, not a
+      government service and not affiliated with any water utility. The
+      information here is gathered from public records and research, and it
+      can be out of date or incomplete. Always call a water source before
+      relying on it. In an emergency, contact your county emergency
+      management office.
+    </p>
+    <p class="colophon">
+      Built in Arizona · Data from ADWR, EPA, and the U.S. Census Bureau ·
+      Community-mapped water points &copy;
+      <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap contributors</a>,
+      <a href="https://opendatacommons.org/licenses/odbl/" rel="noopener">ODbL</a> ·
+      <a href="mailto:sidaksmann@gmail.com">Get in touch</a>
+    </p>
+  </div>
+</footer>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

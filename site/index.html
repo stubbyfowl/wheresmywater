@@ -21,9 +21,9 @@
   <nav aria-label="Main">
     <a href="#browse">Browse</a>
     <a href="#guide">What to do</a>
-    <a href="#why">Why this exists</a>
-    <a href="#feedback">Add a source</a>
-    <a href="#data">Data</a>
+    <a href="about.html">About</a>
+    <a href="add.html">Add a source</a>
+    <a href="data.html">Data sources</a>
   </nav>
 </header>
 
@@ -31,11 +31,6 @@
   <section class="hero">
     <div class="hero-inner">
       <h1>Where can I get water?</h1>
-      <p class="lede">
-        Type your address. We'll show you the closest places to actually get
-        water, who your official provider is, and whether that water has had
-        safety violations on record.
-      </p>
 
       <form id="lookup" class="lookup" novalidate>
         <label for="address">Your address or town</label>
@@ -61,7 +56,7 @@
         </div>
         <p class="or-row">
           <button type="button" id="use-location" class="btn-location">
-            <span aria-hidden="true">📍</span> Use my location
+            Use my location
           </button>
           <span class="or-note" id="location-status" role="status"></span>
         </p>
@@ -114,11 +109,6 @@
 
   <section id="guide" class="band">
     <h2>What to do</h2>
-    <p class="band-lede">
-      Finding a water source is one problem. Knowing what to actually do is
-      another, and nobody hands you instructions. Start with the situation
-      that matches yours.
-    </p>
 
     <div class="guide-grid">
       <details class="guide-item" open>
@@ -223,11 +213,6 @@
 
   <section id="browse" class="band band-alt">
     <h2>Browse every source we know about</h2>
-    <p class="band-lede">
-      The full statewide list, unfiltered by distance. Useful if you want to
-      see what exists in a county, or check whether a company you were given
-      is in the federal records at all.
-    </p>
     <div class="browse-controls">
       <label for="browse-city">City</label>
       <select id="browse-city"><option value="">All cities</option></select>
@@ -244,151 +229,24 @@
     <div id="browse-results" class="browse-results"></div>
   </section>
 
-  <section id="feedback" class="band">
-    <h2>Add or correct a water source</h2>
-    <p class="band-lede">
-      No agency keeps this list, so it gets better only when people who know
-      the ground tell us. If a hauler here has closed, a phone number is
-      wrong, or you know a source we're missing, that is genuinely useful.
-    </p>
-    <form id="feedback-form" class="feedback-form">
-      <div class="field">
-        <label for="fb-kind">What is this about?</label>
-        <select id="fb-kind" name="kind">
-          <option>A water source you're missing</option>
-          <option>A listing that's wrong or out of date</option>
-          <option>A business that has closed</option>
-          <option>Something else</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="fb-name">Name of the business or place</label>
-        <input type="text" id="fb-name" name="name" placeholder="e.g. Example Water Hauling LLC">
-      </div>
-      <div class="field">
-        <label for="fb-where">Town or area it serves</label>
-        <input type="text" id="fb-where" name="where" placeholder="e.g. Dolan Springs, Mohave County">
-      </div>
-      <div class="field">
-        <label for="fb-contact">Their phone or website <span class="opt">(if you have it)</span></label>
-        <input type="text" id="fb-contact" name="contact">
-      </div>
-      <div class="field full">
-        <label for="fb-detail">What do you know about it?</label>
-        <textarea id="fb-detail" name="detail" rows="4"
-          placeholder="Do they haul potable water? Do they deliver to your road? Have you used them?"></textarea>
-      </div>
-      <div class="field full">
-        <label for="fb-you">Your email <span class="opt">(optional, only so we can ask a follow-up)</span></label>
-        <input type="email" id="fb-you" name="you">
-      </div>
-      <div class="field full form-actions">
-        <button type="submit">Send it</button>
-        <button type="button" class="btn-outline" id="fb-copy">Copy instead</button>
-      </div>
-      <p class="caveat full" id="fb-status" role="status">
-        This opens your email app with the details filled in, so nothing is
-        submitted to a server and you can see exactly what gets sent. If your
-        email app doesn't open, use "Copy instead" and paste it into a message
-        to <a href="mailto:sidaksmann@gmail.com">sidaksmann@gmail.com</a>.
-      </p>
-    </form>
-  </section>
+  
 
-  <section id="how" class="band band-alt">
-    <h2>How it works</h2>
-    <ol class="steps">
-      <li>
-        <h3>You type an address</h3>
-        <p>It's matched to a location using the U.S. Census Bureau's free
-        geocoder. Nothing is saved and nothing is sent to us.</p>
-      </li>
-      <li>
-        <h3>We check who serves it</h3>
-        <p>Your location is checked against Arizona's official water
-        provider service-area boundaries, then against the EPA's record of
-        drinking-water violations for that provider.</p>
-      </li>
-      <li>
-        <h3>We show you where to go</h3>
-        <p>For communities we've researched, you get real places to get
-        water: standpipes and haulers, with hours and phone numbers.</p>
-      </li>
-    </ol>
-  </section>
+  
 
-  <section id="why" class="band">
-    <div class="why-grid">
-      <div>
-        <h2>Why this exists</h2>
-        <p>
-          On January 1, 2023, Scottsdale cut off the hauled water that
-          hundreds of homes in Rio Verde Foothills depended on. Those
-          residents had no municipal provider, no city to call, and no
-          single place to find out what their options were.
-        </p>
-        <p>
-          The information that would have helped them existed, but it was
-          scattered: haulers advertised on their own, federal compliance
-          data sat in a database nobody browses, and neighbors ended up
-          building their own website because nothing else covered it.
-        </p>
-        <p>
-          This site pulls those pieces into one answer. It starts with Rio
-          Verde Foothills because that's where the need was clearest and
-          where real places to get water could be verified by hand.
-        </p>
-      </div>
-      <aside class="callout">
-        <h3>Know a water source we're missing?</h3>
-        <p>
-          No government agency keeps a list of haulers and standpipes. This
-          directory is built by hand, which means it's incomplete by
-          default. If you know a source that should be here, tell us.
-        </p>
-        <a class="btn-outline" href="mailto:sidaksmann@gmail.com?subject=Water%20source%20suggestion">Suggest a water source</a>
-      </aside>
-    </div>
-  </section>
+  
 
-  <section id="data" class="band">
-    <h2>Where the data comes from</h2>
-    <p class="band-lede">
-      Every number on this site traces back to a public source. Here's each
-      one, and what it can't tell you.
-    </p>
-    <div class="sources">
-      <article>
-        <h3>Places to get water</h3>
-        <p class="src">Our directory, from public records and research</p>
-        <p>No agency maintains this list, so we compiled it. Each entry shows
-        where its details came from and when. As with any directory, details
-        change over time, so call ahead.</p>
-      </article>
-      <article>
-        <h3>Your water provider</h3>
-        <p class="src">ADWR Community Water System service areas</p>
-        <p>Official service-area boundaries. If your address falls outside
-        every boundary, you have no municipal provider, which is itself the
-        answer.</p>
-      </article>
-      <article>
-        <h3>Safety violations</h3>
-        <p class="src">EPA SDWIS via ECHO</p>
-        <p>Federal drinking-water compliance records. A violation is not
-        automatically a health emergency, and no violations on record does
-        not guarantee water is safe today.</p>
-      </article>
-      <article>
-        <h3>Regulatory context</h3>
-        <p class="src">ADWR AMA/INA, AAWS, GWSI</p>
-        <p>Whether you're in a managed groundwater area, whether your
-        subdivision proved a 100-year supply, and monitored wells nearby.
-        Background, not a verdict on your water.</p>
-      </article>
-    </div>
-  </section>
+  
 </main>
+
+  <section class="band">
+    <div class="callout">
+      <h2 style="margin-bottom:.5rem">Know a water source we're missing?</h2>
+      <p>No agency keeps this list, so it gets better when people who know
+      the ground tell us. Missing hauler, closed business, wrong number: all
+      of it helps.</p>
+      <a class="btn-outline" href="add.html">Add or correct a source</a>
+    </div>
+  </section>
 
 <footer class="site-footer">
   <div class="footer-inner">

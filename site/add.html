@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add or correct a source — Where's My Water</title>
+<meta name="description" content="Tell us about a water hauler, standpipe or refill station we're missing, or correct a listing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Where's My Water</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="index.html#browse">Browse</a>
+    <a href="index.html#guide">What to do</a>
+    <a href="about.html">About</a>
+    <a href="add.html">Add a source</a>
+    <a href="data.html">Data sources</a>
+  </nav>
+</header>
+
+<main id="main">
+  <div class="band">
+    <a class="backlink" href="index.html">Back to search</a>
+    <h1>Add or correct a source</h1>
+    <p class="band-lede">
+      No agency keeps a list of Arizona's water haulers and standpipes, so
+      this directory is compiled by hand. If you know a source we're missing,
+      or a listing here is wrong or out of date, telling us is the fastest
+      way it gets fixed.
+    </p>
+  </div>
+
+  <section class="band" style="padding-top:0">
+
+    <form id="feedback-form" class="feedback-form">
+      <div class="field">
+        <label for="fb-kind">What is this about?</label>
+        <select id="fb-kind" name="kind">
+          <option>A water source you're missing</option>
+          <option>A listing that's wrong or out of date</option>
+          <option>A business that has closed</option>
+          <option>Something else</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fb-name">Name of the business or place</label>
+        <input type="text" id="fb-name" name="name" placeholder="e.g. Example Water Hauling LLC">
+      </div>
+      <div class="field">
+        <label for="fb-where">Town or area it serves</label>
+        <input type="text" id="fb-where" name="where" placeholder="e.g. Dolan Springs, Mohave County">
+      </div>
+      <div class="field">
+        <label for="fb-contact">Their phone or website <span class="opt">(if you have it)</span></label>
+        <input type="text" id="fb-contact" name="contact">
+      </div>
+      <div class="field full">
+        <label for="fb-detail">What do you know about it?</label>
+        <textarea id="fb-detail" name="detail" rows="4"
+          placeholder="Do they haul potable water? Do they deliver to your road? Have you used them?"></textarea>
+      </div>
+      <div class="field full">
+        <label for="fb-you">Your email <span class="opt">(optional, only so we can ask a follow-up)</span></label>
+        <input type="email" id="fb-you" name="you">
+      </div>
+      <div class="field full form-actions">
+        <button type="submit">Send it</button>
+        <button type="button" class="btn-outline" id="fb-copy">Copy instead</button>
+      </div>
+      <p class="caveat full" id="fb-status" role="status">
+        This opens your email app with the details filled in, so nothing is
+        submitted to a server and you can see exactly what gets sent. If your
+        email app doesn't open, use "Copy instead" and paste it into a message
+        to <a href="mailto:sidaksmann@gmail.com">sidaksmann@gmail.com</a>.
+      </p>
+    </form>
+  
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="disclaimer">
+      <strong>Please read:</strong> This is an independent project, not a
+      government service and not affiliated with any water utility. The
+      information here is gathered from public records and research, and it
+      can be out of date or incomplete. Always call a water source before
+      relying on it. In an emergency, contact your county emergency
+      management office.
+    </p>
+    <p class="colophon">
+      Built in Arizona · Data from ADWR, EPA, and the U.S. Census Bureau ·
+      Community-mapped water points &copy;
+      <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap contributors</a>,
+      <a href="https://opendatacommons.org/licenses/odbl/" rel="noopener">ODbL</a> ·
+      <a href="mailto:sidaksmann@gmail.com">Get in touch</a>
+    </p>
+  </div>
+</footer>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

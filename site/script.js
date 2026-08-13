@@ -1033,8 +1033,15 @@ function initFeedback() {
 /* ---------- events ---------- */
 
 function init() {
-  results = document.getElementById("results");
+  // The sub-pages (about, data, add a source) share this script but have no
+  // search box, so every section wires itself only if it's actually present.
+  initFeedback();
+  initBrowse();
+
   form = document.getElementById("lookup");
+  if (!form) return;
+
+  results = document.getElementById("results");
   input = document.getElementById("address");
   submitBtn = document.getElementById("submit-btn");
   suggestBox = document.getElementById("suggestions");
@@ -1061,11 +1068,6 @@ function init() {
     form.requestSubmit();
   });
   document.getElementById("use-location").addEventListener("click", useMyLocation);
-
-  initFeedback();
-  // Browse needs the hauler data, so it loads itself rather than waiting
-  // for a search. It's the cheapest file we ship.
-  initBrowse();
 }
 
 if (typeof document !== "undefined") init();

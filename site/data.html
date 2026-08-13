@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data sources — Where's My Water</title>
+<meta name="description" content="Every dataset behind this Arizona water directory: where it comes from, what it covers, and what it cannot tell you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Where's My Water</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="index.html#browse">Browse</a>
+    <a href="index.html#guide">What to do</a>
+    <a href="about.html">About</a>
+    <a href="add.html">Add a source</a>
+    <a href="data.html">Data sources</a>
+  </nav>
+</header>
+
+<main id="main">
+  <div class="band">
+    <a class="backlink" href="index.html">Back to search</a>
+    <h1>Data sources</h1>
+    <p class="band-lede">
+      Everything on this site traces to a public source. This page lists each
+      one: what it is, how we use it, and where it falls short. The limits
+      matter as much as the data, because someone may drive a long way on it.
+    </p>
+  </div>
+
+  <section class="band" style="padding-top:0">
+    <article class="datasrc">
+      <h2>Places to get water</h2>
+      <p class="src">Our own directory, compiled from public records and research</p>
+      <p>
+        Standpipes, refill stations and water haulers. No Arizona agency
+        publishes a statewide list of these, which is the gap this site
+        exists to fill. Entries come from company records, utility
+        announcements, news coverage and local knowledge, and each one shows
+        where its details came from and when.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> businesses close, phone numbers change and
+        service areas shift. Distances are measured from a company's
+        registered address, not from the edge of where it will actually
+        drive, so a hauler further away may still deliver to you and a close
+        one may not. Call before you count on any listing, as with any
+        directory.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Water haulers</h2>
+      <p class="src">Federal Motor Carrier Safety Administration (FMCSA) census</p>
+      <p>
+        Arizona licenses potable water hauling county by county
+        (A.A.C. R18-4-125), and those permit lists are not published online.
+        Haulers do drive trucks, though, and trucks are registered federally,
+        so we search the FMCSA carrier census for Arizona carriers whose
+        business names indicate water hauling: 74 companies across 36 cities.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> matching on names is imperfect in both
+        directions. A hauler named something like "Sunrise Transport" won't
+        be found, and lookalikes have to be excluded by hand: "Winston Water
+        Cooler" is a plumbing supplier, "Buckeye Water Conservation &amp;
+        Drainage District" is an irrigation district. Companies listed may
+        haul only construction or dust-control water rather than potable.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Public water points</h2>
+      <p class="src">OpenStreetMap, ODbL</p>
+      <p>
+        962 mapped drinking-water points across Arizona, contributed by
+        volunteers. These fill the gap outside the communities the directory
+        covers in detail, so that a search anywhere in the state returns
+        something.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> most are drinking fountains, park taps and
+        campground spigots. They are useful for filling bottles or a jug and
+        are <strong>not</strong> a way to fill a household storage tank. They
+        are also unverified by us, and a volunteer-mapped tap may have been
+        removed years ago.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Your water provider</h2>
+      <p class="src">ADWR Community Water System service areas</p>
+      <p>
+        The official boundaries of Arizona's community water systems, used to
+        answer who serves a given address: 846 mapped service areas. Each
+        carries an ADEQ ID, which is the same identifier the EPA calls a
+        PWSID, and that is what links your provider to its federal compliance
+        record.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> 113 systems in the source data have no
+        mapped boundary at all, so they can never match an address and are
+        excluded. A provider may also serve customers slightly outside its
+        mapped area. If the site says no provider serves you but you receive
+        a water bill, believe the bill. For much of rural Arizona, though,
+        "no provider" is the true and important answer: no utility is
+        obligated to bring water to that parcel.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Safety violations</h2>
+      <p class="src">EPA Safe Drinking Water Information System, via ECHO</p>
+      <p>
+        Federal drinking-water compliance records for every active Arizona
+        public water system, refreshed quarterly. Health-based violations are
+        reported separately from total violations, violations that are still
+        unresolved are counted on their own, and anything since 2021 is
+        flagged as recent.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> a violation is not automatically a health
+        emergency. Many are monitoring or reporting failures, meaning a
+        system did not test or file on time rather than that anything was
+        found in the water. Records also run back decades, which is why raw
+        totals are shown alongside recency rather than on their own. No
+        violations on record does not guarantee your water is safe today.
+        Private wells are not covered at all: they fall outside EPA and ADEQ
+        drinking-water rules, so nobody tests them but you.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Wells</h2>
+      <p class="src">ADWR Wells55 registry, combined with the GWSI monitoring index</p>
+      <p>
+        Wells55 is Arizona's well registration database: every well drilled
+        in the state must be registered, including exempt domestic wells.
+        That is roughly 218,000 records. GWSI, the Groundwater Site
+        Inventory, is a much smaller network of about 46,800 sites where
+        water levels are physically measured. The two are combined, treating
+        points within 60 metres of each other as one well, for about 257,000
+        in total.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> GWSI on its own is a monitoring sample, not
+        a census, and undercounts real wells roughly ninefold, which is why
+        it is not used alone. GWSI also includes springs and sites predating
+        the 1980 registry, so not every point is a registered well. Depths
+        and drill years are recorded inconsistently and are often blank. The
+        Wells55 data reaches us through a public mirror published by the
+        Arizona Association of Conservation Districts rather than directly
+        from ADWR, so its refresh date is not something we can confirm.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Regulatory context</h2>
+      <p class="src">ADWR AMA/INA boundaries and Assured Water Supply determinations</p>
+      <p>
+        Active Management Areas and Irrigation Non-Expansion Areas are the
+        parts of Arizona with real groundwater regulation: all 11 are
+        included. Assured and Adequate Water Supply determinations record
+        where a subdivision had to prove a 100-year water supply before it
+        could be approved: 5,594 of them.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> this is background, not a verdict on your
+        water. Being inside an AMA does not mean your supply is secure, and
+        being outside one does not mean it is not. Rio Verde Foothills sits
+        <em>inside</em> the Phoenix AMA and still lost its water access in
+        2023, because the problem there was the absence of a provider and of
+        supply determinations on split lots, not the AMA boundary.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Turning an address into a location</h2>
+      <p class="src">U.S. Census Bureau geocoder, with Photon for suggestions</p>
+      <p>
+        Addresses are matched by the Census Bureau's public geocoder, which
+        knows US address ranges. Type-ahead suggestions come from Photon,
+        which is built on OpenStreetMap. All of it runs in your browser: your
+        address is never sent to us and nothing is stored.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> the Census geocoder does not know every
+        rural address, and rural addresses are much of the point of this
+        site. When it cannot find one, the site falls back to the coordinates
+        of the suggestion you picked and labels the result as approximate.
+      </p>
+    </article>
+  </section>
+
+  <section class="band band-alt">
+    <h2>Checking any of this yourself</h2>
+    <p>
+      All of it is public. The code that fetches and processes these datasets
+      is open, so every number here can be traced back to its source and
+      recomputed.
+    </p>
+    <p>
+      <a class="btn-outline" href="https://github.com/stubbyfowl/wheresmywater" rel="noopener">
+        View the source and data pipeline
+      </a>
+    </p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="disclaimer">
+      <strong>Please read:</strong> This is an independent project, not a
+      government service and not affiliated with any water utility. The
+      information here is gathered from public records and research, and it
+      can be out of date or incomplete. Always call a water source before
+      relying on it. In an emergency, contact your county emergency
+      management office.
+    </p>
+    <p class="colophon">
+      Built in Arizona · Data from ADWR, EPA, and the U.S. Census Bureau ·
+      Community-mapped water points &copy;
+      <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap contributors</a>,
+      <a href="https://opendatacommons.org/licenses/odbl/" rel="noopener">ODbL</a> ·
+      <a href="mailto:sidaksmann@gmail.com">Get in touch</a>
+    </p>
+  </div>
+</footer>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
