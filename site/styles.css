@@ -29,6 +29,7 @@
 
   --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
 
   --wrap: 70rem;
   --radius: 12px;
@@ -45,11 +46,12 @@ body {
   margin: 0;
   background: var(--white);
   color: var(--ink);
-  font: 400 1.0625rem/1.6 var(--sans);
+  font: 400 1.0625rem/1.65 var(--serif);
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 { font-weight: 600; line-height: 1.15; margin: 0 0 .5em; letter-spacing: -.02em; }
+h1, h2 { font-family: var(--mono); font-weight: 600; line-height: 1.15; margin: 0 0 .5em; letter-spacing: -.03em; }
+h3 { font-family: var(--sans); font-weight: 600; line-height: 1.25; margin: 0 0 .5em; letter-spacing: -.01em; }
 h1 { font-size: clamp(2.125rem, 5.5vw, 3.25rem); letter-spacing: -.03em; }
 h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
 h3 { font-size: 1.125rem; }
@@ -83,10 +85,10 @@ a:hover { color: var(--blue-dark); }
   background: radial-gradient(circle at 35% 30%, #5aa9f0 0%, var(--blue) 45%, var(--blue-dark) 100%);
   box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .55);
 }
-.brand-name { font-weight: 600; font-size: 1.0625rem; letter-spacing: -.01em; }
+.brand-name { font-family: var(--mono); font-weight: 600; font-size: 1.0625rem; letter-spacing: -.01em; }
 .site-header nav { display: flex; gap: .25rem; flex-wrap: wrap; }
 .site-header nav a {
-  font-size: .9375rem; color: var(--ink-soft); text-decoration: none;
+  font-family: var(--sans); font-size: .9375rem; color: var(--ink-soft); text-decoration: none;
   padding: .4375rem .6875rem; border-radius: var(--radius-sm);
 }
 .site-header nav a:hover { color: var(--blue-dark); background: var(--blue-tint); }
@@ -100,7 +102,7 @@ a:hover { color: var(--blue-dark); }
 .hero-inner { max-width: 44rem; margin: 0 auto; }
 .lede { font-size: 1.125rem; color: var(--ink-soft); max-width: 34rem; margin-bottom: 1.75rem; }
 
-.lookup label { display: block; font-weight: 600; font-size: .9375rem; margin-bottom: .5rem; }
+.lookup label { font-family: var(--sans); display: block; font-weight: 600; font-size: .9375rem; margin-bottom: .5rem; }
 .lookup-row { display: flex; gap: .5rem; flex-wrap: wrap; }
 .lookup input {
   width: 100%; padding: .875rem 1rem; font: inherit; color: var(--ink);
@@ -148,7 +150,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 }
 .suggestions li { padding: .5rem .625rem; border-radius: var(--radius-sm); cursor: pointer; display: grid; gap: .0625rem; }
 .suggestions li:hover, .suggestions li.active { background: var(--blue-tint); }
-.sug-1 { font-weight: 600; font-size: .9375rem; }
+.sug-1 { font-family: var(--sans); font-weight: 600; font-size: .9375rem; }
 .sug-2 { font-size: .8125rem; color: var(--ink-soft); }
 
 /* ---------- results ---------- */
@@ -199,7 +201,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 .hauler-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
 .hauler { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.125rem; box-shadow: var(--shadow); }
 .hauler-top { display: flex; justify-content: space-between; align-items: start; gap: .5rem; margin-bottom: .375rem; }
-.hauler-top strong { font-size: 1rem; }
+.hauler-top strong { font-family: var(--sans); font-size: 1rem; }
 .badge-conf {
   flex: none; font: 500 .6875rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: .03em;
   padding: .3125rem .4375rem; border-radius: 5px; background: var(--surface-2); color: var(--ink-soft);
@@ -237,19 +239,19 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 
 /* tier 2: provider */
 .provider { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); }
-.provider-name { font-size: 1.375rem; font-weight: 600; letter-spacing: -.02em; margin: 0 0 .25rem; }
+.provider-name { font-family: var(--mono); font-size: 1.375rem; font-weight: 600; letter-spacing: -.02em; margin: 0 0 .25rem; }
 .no-provider { border-left: 4px solid var(--blue); background: var(--surface); }
 .no-provider .provider-name { color: var(--blue-dark); }
 .viol-row { display: flex; gap: 2rem; flex-wrap: wrap; margin: 1.25rem 0 0; padding-top: 1.25rem; border-top: 1px solid var(--line-soft); }
 .stat { min-width: 8rem; }
-.stat .n { font-size: 2rem; font-weight: 600; line-height: 1; display: block; letter-spacing: -.02em; }
+.stat .n { font-family: var(--mono); font-size: 2rem; font-weight: 600; line-height: 1; display: block; letter-spacing: -.02em; }
 .stat .n.clean { color: var(--ok); }
 .stat .n.flag { color: var(--alert); }
 .stat .l { font-size: .8125rem; color: var(--ink-soft); }
 
 /* tier 3: context */
 .context { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.context summary { padding: 1.125rem 1.375rem; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
+.context summary { font-family: var(--sans); padding: 1.125rem 1.375rem; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
 .context summary::-webkit-details-marker { display: none; }
 .context summary::after { content: "+"; font: 400 1.25rem/1 var(--mono); color: var(--ink-faint); }
 .context[open] summary::after { content: "−"; }
@@ -308,7 +310,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 .stats { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
 .stat-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; border: 1px solid var(--line); box-shadow: var(--shadow); }
 .stat-n {
-  display: block; font-weight: 600; font-size: clamp(2.25rem, 5vw, 3rem);
+  display: block; font-family: var(--mono); font-weight: 600; font-size: clamp(2.25rem, 5vw, 3rem);
   line-height: 1; color: var(--blue); margin-bottom: .625rem; letter-spacing: -.03em;
 }
 .stat-l { font-size: 1rem; margin-bottom: .75rem; }
@@ -318,7 +320,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 
 .guide-grid { display: grid; gap: .625rem; }
 .guide-item { border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
-.guide-item summary { padding: 1.0625rem 1.375rem; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 1rem; font-size: 1.0625rem; }
+.guide-item summary { font-family: var(--sans); padding: 1.0625rem 1.375rem; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 1rem; font-size: 1.0625rem; }
 .guide-item summary::-webkit-details-marker { display: none; }
 .guide-item summary::after { content: "+"; font: 400 1.25rem/1 var(--mono); color: var(--ink-faint); }
 .guide-item[open] summary::after { content: "−"; }
@@ -343,6 +345,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 .browse-count { margin-left: auto; font: 500 .8125rem/1 var(--mono); color: var(--ink-soft); }
 .browse-results { overflow-x: auto; }
 .browse-table { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.browse-table td { font-family: var(--sans); }
 .browse-table th, .browse-table td { padding: .75rem .875rem; text-align: left; border-bottom: 1px solid var(--line-soft); font-size: .9375rem; }
 .browse-table th { font: 500 .6875rem/1.5 var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); background: var(--surface); }
 .browse-table tr:last-child td { border-bottom: 0; }
@@ -372,7 +375,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 }
 .field { display: grid; gap: .375rem; }
 .field.full { grid-column: 1 / -1; }
-.field label { font-weight: 600; font-size: .9375rem; }
+.field label { font-family: var(--sans); font-weight: 600; font-size: .9375rem; }
 .field .opt { font-weight: 400; color: var(--ink-soft); }
 .field input, .field select, .field textarea {
   padding: .625rem .75rem; font: inherit; font-size: .9375rem; width: 100%;
