@@ -952,15 +952,30 @@ function browseMarkup(rows) {
     </table>
     ${
       rest.length
-        ? `<details class="browse-more">
-             <summary>Show ${rest.length} more</summary>
-             <table class="browse-table">
+        ? `<div class="browse-more">
+             <button type="button" class="btn-load-more">
+               Load more
+             </button>
+             <table class="browse-table browse-rest" hidden>
                <thead>${head}</thead>
                <tbody>${rest.map(browseRow).join("")}</tbody>
              </table>
-           </details>`
+           </div>`
         : ""
     }`;
+}
+
+function wireLoadMore(wrap) {
+  const btn = wrap.querySelector(".btn-load-more");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    btn.classList.add("loading");
+    btn.disabled = true;
+    setTimeout(() => {
+      wrap.querySelector(".browse-rest").hidden = false;
+      btn.remove();
+    }, 1300);
+  });
 }
 
 async function initBrowse() {
@@ -985,6 +1000,7 @@ async function initBrowse() {
       q: qInput.value,
     });
     wrap.innerHTML = browseMarkup(rows);
+    wireLoadMore(wrap);
     countEl.textContent = `${rows.length} of ${haulers.length}`;
   };
 
@@ -1086,7 +1102,26 @@ function init() {
   document.getElementById("use-location").addEventListener("click", useMyLocation);
 }
 
-if (typeof document !== "undefined") init();
+function initCookieBanner() {
+  if (localStorage.getItem("wmw-cookies-ok")) return;
+  const bar = document.createElement("div");
+  bar.className = "cookie-banner";
+  bar.innerHTML = `
+    <p>This site does not use cookies itself. Third-party services
+    (Google Fonts, OpenStreetMap embeds) may set their own.
+    <a href="privacy.html">Learn more</a></p>
+    <button type="button" class="btn-cookie-ok">Got it</button>`;
+  document.body.appendChild(bar);
+  bar.querySelector(".btn-cookie-ok").addEventListener("click", () => {
+    localStorage.setItem("wmw-cookies-ok", "1");
+    bar.remove();
+  });
+}
+
+if (typeof document !== "undefined") {
+  init();
+  initCookieBanner();
+}
 
 export {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
