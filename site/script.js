@@ -1042,19 +1042,13 @@ function initFeedback() {
     you: fb.you.value,
   });
 
-  fb.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const v = read();
-    const subject = `Water source: ${v.name || v.where || "suggestion"}`;
-    window.location.href =
-      `mailto:sidaksmann@gmail.com?subject=${encodeURIComponent(subject)}` +
-      `&body=${encodeURIComponent(feedbackBody(v))}`;
-  });
+  fb.addEventListener("submit", (e) => e.preventDefault());
 
   document.getElementById("fb-copy").addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(feedbackBody(read()));
-      status.textContent = "Copied. Paste it into an email to sidaksmann@gmail.com.";
+      status.textContent =
+        "Copied! Now paste it into an email to sidaksmann@gmail.com.";
     } catch {
       status.textContent =
         "Couldn't copy automatically. Select the text in the boxes and copy it manually.";
