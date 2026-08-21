@@ -64,6 +64,19 @@ def write_geojson(gdf: gpd.GeoDataFrame, keep_cols: list[str], out_name: str,
     print(f"  {out_name}: {len(gdf)} features{note}, {os.path.getsize(path):,} bytes")
 
 
+def build_subsidence():
+    """Land subsidence areas from ADWR's InSAR data (31 polygons statewide)."""
+    print("Subsidence...")
+    import glob
+    shp = glob.glob(os.path.join(DATA_DIR, "land_subsidence", "*.shp"))
+    if not shp:
+        print("  no shapefile found, skipping")
+        return
+    gdf = gpd.read_file(shp[0]).to_crs(epsg=4326)
+    gdf = gdf.rename(columns={"Comments": "NAME", "Comment": "PERIOD"})
+    write_geojson(gdf, ["NAME", "PERIOD"], "subsidence.json", simplify=0.0002)
+
+
 def build_boundaries():
     print("Boundaries...")
     write_geojson(
@@ -309,6 +322,7 @@ def report_payload():
 
 if __name__ == "__main__":
     build_boundaries()
+    build_subsidence()
     build_osm_water()
     build_violations()
     verify_outputs()

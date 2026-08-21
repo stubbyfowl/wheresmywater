@@ -263,6 +263,13 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 .fact dt { font: 500 .6875rem/1.5 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); margin-bottom: .25rem; }
 .fact dd { margin: 0; font: 600 1.0625rem/1.4 var(--sans); }
 .caveat { font: 400 .8125rem/1.4 var(--sans); color: var(--ink-soft); margin: 0; }
+.flag-inline { color: var(--alert); font-weight: 600; }
+
+/* tier 4: financial help (conditional) */
+.help-program { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; margin-top: 1rem; }
+.help-program h3 { font: 600 1rem/1.3 var(--mono); margin: 0 0 .75rem; }
+.help-program p { font: 400 .9375rem/1.65 var(--serif); margin: 0 0 .75rem; }
+.help-program .provenance { margin-bottom: 0; }
 
 /* nearest wells list inside tier 3 */
 .wells-list { list-style: none; margin: .75rem 0 1rem; padding: 0; display: grid; gap: .375rem; }

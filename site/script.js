@@ -110,11 +110,12 @@ async function loadData() {
 let contextData = null;
 async function loadContext() {
   if (contextData) return contextData;
-  const [ama, aaws] = await Promise.all([
+  const [ama, aaws, subsidence] = await Promise.all([
     grab("ama_ina.json", { features: [] }),
     grab("aaws.json", { features: [] }),
+    grab("subsidence.json", { features: [] }),
   ]);
-  contextData = { ama, aaws };
+  contextData = { ama, aaws, subsidence };
   return contextData;
 }
 
@@ -321,17 +322,103 @@ function lookupContext(loc, c) {
     .sort((a, b) => a.miles - b.miles);
 
   const depths = near.map((w) => w.depth).filter((d) => typeof d === "number");
+
+  const aawsFeature = findFeature(c.aaws, lon, lat);
+  const aawsProps = aawsFeature && aawsFeature.properties;
+
+  const subsidenceFeature = findFeature(c.subsidence, lon, lat);
+  const subsidenceProps = subsidenceFeature && subsidenceFeature.properties;
+
   return {
     ama: nameOf(findFeature(c.ama, lon, lat), /BASIN_NAME|NAME/i),
-    aaws: findFeature(c.aaws, lon, lat),
+    aaws: aawsFeature,
+    aawsSubdivision: aawsProps ? (aawsProps.SUBDIVISION || null) : null,
+    aawsProvider: aawsProps ? (aawsProps.WATER_PROVIDER || null) : null,
+    aawsType: aawsProps ? (aawsProps.FILE_TYPE || null) : null,
+    aawsStatus: aawsProps ? (aawsProps.FILESTATUS || null) : null,
+    subsidence: subsidenceProps ? (subsidenceProps.NAME || null) : null,
+    subsidencePeriod: subsidenceProps ? (subsidenceProps.PERIOD || null) : null,
     wellCount: near.length,
     nearestWells: near.slice(0, 6),
-    // Median rather than mean: a single 2,000ft irrigation well shouldn't
-    // define what "the wells around here" look like.
     medianDepth: depths.length
       ? depths.sort((a, b) => a - b)[Math.floor(depths.length / 2)]
       : null,
   };
+}
+
+/* ---------- financial help (conditional) ---------- */
+
+/*
+ * Approximate bounding boxes for areas where specific water financial
+ * assistance programs apply. These are rough enough for an informational
+ * "you may qualify" note, not for legal eligibility.
+ */
+const HELP_REGIONS = {
+  mohave:   { minLon: -114.75, maxLon: -113.0,  minLat: 34.25, maxLat: 37.0  },
+  yuma:     { minLon: -114.82, maxLon: -113.28, minLat: 32.05, maxLat: 33.47 },
+  willcox:  { minLon: -110.2,  maxLon: -109.4,  minLat: 31.6,  maxLat: 32.6  },
+  douglas:  { minLon: -110.0,  maxLon: -109.3,  minLat: 31.3,  maxLat: 31.8  },
+};
+
+function inBox(lat, lon, b) {
+  return lon >= b.minLon && lon <= b.maxLon && lat >= b.minLat && lat <= b.maxLat;
+}
+
+function financialHelp(lat, lon) {
+  const programs = [];
+
+  if (inBox(lat, lon, HELP_REGIONS.mohave) || inBox(lat, lon, HELP_REGIONS.yuma)) {
+    const county = inBox(lat, lon, HELP_REGIONS.mohave) ? "Mohave" : "Yuma";
+    programs.push({
+      title: `${county} County water improvement programs`,
+      body: `Under A.R.S. &sect; 11-254.09, Arizona counties can establish
+        water improvement districts to fund infrastructure like wells,
+        pipelines, and storage. ${county} County has used this authority for
+        water projects in unincorporated areas. Contact the ${county} County
+        Public Works department to ask about current programs or planned
+        improvements in your area.`,
+      source: `A.R.S. &sect; 11-254.09 (county water improvement districts)`,
+    });
+  }
+
+  if (inBox(lat, lon, HELP_REGIONS.willcox) || inBox(lat, lon, HELP_REGIONS.douglas)) {
+    const basin = inBox(lat, lon, HELP_REGIONS.willcox) ? "Willcox" : "Douglas";
+    programs.push({
+      title: "Riverview groundwater settlement",
+      body: `The Arizona Attorney General's settlement with Riverview, LLC
+        covers the ${basin} groundwater basin. The settlement was intended to
+        address groundwater depletion from large-scale agricultural pumping
+        in the area. If you are affected by declining water levels in the
+        ${basin} basin, the AG's office may have information about relief
+        measures or monitoring commitments under the settlement.`,
+      source: `State of Arizona v. Riverview, LLC (${basin} basin)`,
+    });
+  }
+
+  return programs;
+}
+
+function renderHelp(programs) {
+  if (!programs.length) return "";
+  return `
+    <section class="tier">
+      <div class="tier-head"><span class="tier-num">4 · Help</span><h2>Financial assistance that may apply here</h2></div>
+      <p class="caveat">
+        These programs are listed because this address falls in a geographic
+        area where they apply. Eligibility depends on specific circumstances.
+        Contact the listed agency directly to confirm.
+      </p>
+      ${programs
+        .map(
+          (p) => `
+        <div class="help-program">
+          <h3>${p.title}</h3>
+          <p>${p.body}</p>
+          <p class="provenance">${p.source}</p>
+        </div>`
+        )
+        .join("")}
+    </section>`;
 }
 
 /* ---------- render ---------- */
@@ -445,6 +532,20 @@ function renderContext() {
 }
 
 function contextFacts(c) {
+  let aawsLabel;
+  if (c.aaws) {
+    const parts = [];
+    if (c.aawsSubdivision) parts.push(esc(c.aawsSubdivision));
+    if (c.aawsStatus === "Issued inadequate") {
+      parts.push(`<span class="flag-inline">inadequate supply</span>`);
+    } else if (c.aawsStatus) {
+      parts.push(esc(c.aawsStatus).toLowerCase());
+    }
+    aawsLabel = parts.length ? parts.join(" · ") : "On record";
+  } else {
+    aawsLabel = "None on file";
+  }
+
   const facts = [
     `<div class="fact"><dt>Groundwater management</dt><dd>${
       c.ama ? esc(c.ama) : "Outside any AMA or INA"
@@ -453,10 +554,43 @@ function contextFacts(c) {
     `<div class="fact"><dt>Typical well depth nearby</dt><dd>${
       c.medianDepth ? `${c.medianDepth} ft` : "Not recorded"
     }</dd></div>`,
-    `<div class="fact"><dt>100-year supply determination</dt><dd>${
-      c.aaws ? "On record for this area" : "None found for this address"
+    `<div class="fact"><dt>Water supply determination</dt><dd>${aawsLabel}</dd></div>`,
+    `<div class="fact"><dt>Land subsidence</dt><dd>${
+      c.subsidence
+        ? `Active area (${esc(c.subsidence)})`
+        : "Not in a monitored subsidence area"
     }</dd></div>`,
   ];
+
+  let aawsNote = "";
+  if (c.aaws) {
+    const detail = [];
+    if (c.aawsType) detail.push(esc(c.aawsType));
+    if (c.aawsProvider) detail.push(`Provider: ${esc(c.aawsProvider)}`);
+    aawsNote = detail.length
+      ? `<p class="caveat" style="margin-top:.75rem">${detail.join(". ")}.</p>`
+      : "";
+  } else {
+    aawsNote = `<p class="caveat" style="margin-top:.75rem">
+      Arizona requires subdivisions (6+ lots) to prove a long-term water
+      supply before approval. If this property is on unsubdivided land, no
+      determination was required, so seeing "none on file" is normal, not a
+      gap in the records. If this is a platted subdivision and nothing is
+      showing, the determination may be filed under a different name, or the
+      subdivision may predate the Assured Water Supply rules (1995 inside
+      AMAs, 2006 statewide).
+    </p>`;
+  }
+
+  let subsidenceNote = "";
+  if (c.subsidence) {
+    subsidenceNote = `<p class="caveat" style="margin-top:.75rem">
+      ADWR's InSAR satellite monitoring has measured ground sinking in this
+      area${c.subsidencePeriod ? ` (observed ${esc(c.subsidencePeriod).toLowerCase()})` : ""}.
+      Subsidence can damage wells, foundations, and infrastructure. It is
+      caused by groundwater pumping and is generally irreversible.
+    </p>`;
+  }
 
   const wells = c.nearestWells && c.nearestWells.length
     ? `<h3 style="margin-top:1.25rem">Closest wells on record</h3>
@@ -474,16 +608,15 @@ function contextFacts(c) {
 
   return `
     <dl class="facts">${facts.join("")}</dl>
+    ${aawsNote}
+    ${subsidenceNote}
     ${wells}
     <p class="caveat">
       Wells come from ADWR's Wells55 registration database (every registered
       well, including exempt domestic ones) combined with its GWSI monitoring
-      index, with sites within 60m of each other treated as one. GWSI also
-      includes springs and wells predating the 1980 registry, so not every
-      point is a registered well. Active Management Areas are the parts of
-      Arizona with real groundwater regulation; most of the state sits
-      outside one. A 100-year supply determination means a subdivision had to
-      prove long-term water availability before approval.
+      index, with sites within 60m of each other treated as one. Active
+      Management Areas are the parts of Arizona with real groundwater
+      regulation; most of the state sits outside one.
     </p>`;
 }
 
@@ -614,6 +747,8 @@ function render(r) {
        ${renderHaulers(r.haulers)}
        ${renderOsm(r.osm, true)}`;
 
+  const helpPrograms = financialHelp(r.loc.lat, r.loc.lon);
+
   results.innerHTML = `
     <p class="matched">Showing results for ${esc(r.loc.matched)}${
       r.loc.approximate ? " (approximate location)" : ""
@@ -632,7 +767,9 @@ function render(r) {
     <section class="tier">
       <div class="tier-head"><span class="tier-num">3 · Background</span><h2>The bigger picture</h2></div>
       ${renderContext()}
-    </section>`;
+    </section>
+
+    ${renderHelp(helpPrograms)}`;
 
   // Map frames are built on first open. Eagerly embedding one per water
   // point would fire a dozen requests to openstreetmap.org for maps most
@@ -1121,4 +1258,5 @@ export {
   inRing, inPolygon, inFeature, findFeature, milesBetween,
   communityFor, nameOf, pwsidOf, lookup, nearestOsm, lookupContext,
   nearestHaulers, mapEmbedSrc, labelFor, renderBrowse, feedbackBody, tileKey,
+  financialHelp, inBox,
 };
