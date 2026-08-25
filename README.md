@@ -2,7 +2,7 @@
 
 Type an Arizona address, find out where to actually get water.
 
-**Live:** https://stubbyfowl.github.io/wheresmywater/
+**Live:** wheresmywater.org
 
 Most water tools tell you about policy. This one tries to answer the
 question someone actually has when their tap situation is uncertain: *where
