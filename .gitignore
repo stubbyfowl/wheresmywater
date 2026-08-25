@@ -4,6 +4,7 @@
 /data/
 fetch_log.txt
 
+.claude/
 .venv/
 __pycache__/
 *.pyc
