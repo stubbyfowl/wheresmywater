@@ -502,6 +502,26 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 }
 .btn-cookie-ok:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.4); }
 
+/* ---------- provider pages ---------- */
+
+.viol-table { width: 100%; border-collapse: collapse; font: 400 .9375rem/1.5 var(--sans); }
+.viol-table th { font-weight: 600; text-align: left; padding: .625rem .75rem; border-bottom: 2px solid var(--line); font-size: .8125rem; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-faint); }
+.viol-table td { padding: .625rem .75rem; border-bottom: 1px solid var(--line-soft); }
+.viol-table tr:last-child td { border-bottom: 0; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); margin: .75rem 0 1rem; }
+
+.letter-nav { display: flex; flex-wrap: wrap; gap: .375rem; margin-bottom: 1.5rem; }
+.letter-nav a { font: 600 .875rem/1 var(--sans); padding: .375rem .625rem; border-radius: var(--radius-sm); background: var(--surface); color: var(--blue); text-decoration: none; }
+.letter-nav a:hover { background: var(--blue-tint); }
+
+.provider-list { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: .375rem; }
+.provider-list li { font: 400 1rem/1.5 var(--sans); padding: .375rem 0; border-bottom: 1px solid var(--line-soft); }
+.provider-list a { color: var(--blue); text-decoration: none; font-weight: 500; }
+.provider-list a:hover { text-decoration: underline; }
+.provider-meta { color: var(--ink-faint); font-size: .8125rem; margin-left: .5rem; }
+.badge { font: 600 .6875rem/1 var(--sans); padding: .1875rem .5rem; border-radius: var(--radius-sm); margin-left: .375rem; vertical-align: middle; }
+.badge-flag { background: #fde8e6; color: var(--alert); }
+
 /* ---------- responsive ---------- */
 
 @media (max-width: 46rem) {
