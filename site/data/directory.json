@@ -55,6 +55,21 @@
           "access": "Call for a service quote. Has served Rio Verde Foothills for 16+ years.",
           "sourced": "dynamitewater.com questions-answers page, checked 2026-08-12",
           "needs_call": true
+        },
+        {
+          "name": "Water Express",
+          "type": "hauler",
+          "what": "Reported as delivering bulk potable water to the Rio Verde Foothills area. Not yet independently verified.",
+          "address": null,
+          "lat": null,
+          "lon": null,
+          "coordinates_approximate": true,
+          "hours": null,
+          "phone": null,
+          "website": null,
+          "access": "Call to arrange delivery.",
+          "sourced": "Resident report (RVF community), September 2026. Unverified.",
+          "needs_call": true
         }
       ],
       "also_see": [

@@ -555,6 +555,9 @@ function contextFacts(c) {
       c.medianDepth ? `${c.medianDepth} ft` : "Not recorded"
     }</dd></div>`,
     `<div class="fact"><dt>Water supply determination</dt><dd>${aawsLabel}</dd></div>`,
+    `<div class="fact"><dt>Land classification</dt><dd>${
+      c.aaws ? "Subdivided (determination on file)" : "Not classified in ADWR data"
+    }</dd></div>`,
     `<div class="fact"><dt>Land subsidence</dt><dd>${
       c.subsidence
         ? `Active area (${esc(c.subsidence)})`
@@ -573,12 +576,15 @@ function contextFacts(c) {
   } else {
     aawsNote = `<p class="caveat" style="margin-top:.75rem">
       Arizona requires subdivisions (6+ lots) to prove a long-term water
-      supply before approval. If this property is on unsubdivided land, no
-      determination was required, so seeing "none on file" is normal, not a
-      gap in the records. If this is a platted subdivision and nothing is
-      showing, the determination may be filed under a different name, or the
-      subdivision may predate the Assured Water Supply rules (1995 inside
-      AMAs, 2006 statewide).
+      supply before approval. Land divisions (2-5 lots) and unsubdivided
+      land do not require a determination, so "none on file" is normal for
+      those parcels, not a gap in the records. ADWR's public data does not
+      include a subdivided/unsubdivided classification for individual
+      parcels, so the land classification shown above is inferred from
+      whether a determination exists. If this is a platted subdivision and
+      nothing is showing, the determination may be filed under a different
+      name, or the subdivision may predate the Assured Water Supply rules
+      (1995 inside AMAs, 2006 statewide).
     </p>`;
   }
 
@@ -1239,7 +1245,7 @@ function initCookieBanner() {
   bar.className = "cookie-banner";
   bar.innerHTML = `
     <p>This site does not use cookies itself. Third-party services
-    (Google Fonts, OpenStreetMap embeds) may set their own.
+    (OpenStreetMap embeds) may set their own.
     <a href="privacy.html">Learn more</a></p>
     <button type="button" class="btn-cookie-ok">Got it</button>`;
   document.body.appendChild(bar);
