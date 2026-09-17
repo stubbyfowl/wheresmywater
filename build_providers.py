@@ -202,6 +202,12 @@ def build_provider_page(sys_id, viol, cws_props, ama_names):
 <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1268c3">
+<meta property="og:title" content="{page_title}">
+<meta property="og:description" content="{esc(meta_desc)}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wheresmywater.org/provider/{slug}.html">
+<meta property="og:image" content="https://wheresmywater.org/icon-192.png">
+<meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="../styles.css">
 <script type="application/ld+json">
 {schema_json}
@@ -329,6 +335,12 @@ def build_providers_index(providers_list):
 <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#1268c3">
+<meta property="og:title" content="All Arizona water providers | Where's My Water">
+<meta property="og:description" content="Browse all {len(providers_list)} Arizona public water systems tracked by Where's My Water. Violation records, safety data, and contact info for every provider.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wheresmywater.org/providers.html">
+<meta property="og:image" content="https://wheresmywater.org/icon-192.png">
+<meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
