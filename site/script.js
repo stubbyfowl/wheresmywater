@@ -471,10 +471,9 @@ function renderProvider(r) {
     return `
       <div class="provider no-provider">
         <p class="provider-name">No municipal water provider</p>
-        <p>This address doesn't fall inside any water utility's official
-        service area. That isn't an error in the lookup, it's the situation:
-        there's no city or company obligated to pipe water here. Homes in
-        this position typically rely on hauled water delivered to a storage
+        <p>This address does not fall inside any water utility's official
+        service area. This is common in rural Arizona. Homes in this
+        situation typically rely on hauled water delivered to a storage
         tank, or a private well.</p>
         <p class="caveat">Source: ADWR Community Water System service areas.
         If you believe you do have a provider, they may serve you outside
@@ -506,8 +505,9 @@ function renderProvider(r) {
       <p class="caveat" style="margin-top:1rem">
         From EPA's Safe Drinking Water Information System. A violation can be
         anything from a missed monitoring report to a contaminant exceedance,
-        and records go back many years, so a count above zero doesn't mean
-        your water is unsafe today. Zero doesn't guarantee it's safe either.
+        and records go back many years, so a count above zero does not
+        necessarily reflect current water quality. See the provider's
+        Consumer Confidence Report for the most recent testing results.
       </p>`;
   }
 
