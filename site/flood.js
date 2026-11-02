@@ -129,6 +129,9 @@ function initMap() {
     return;
   }
 
+  // Leaflet supplies the map canvas; remove the no-JavaScript loading copy so
+  // it never sits on top of the usable map once the library is ready.
+  el.innerHTML = "";
   map = L.map(el, { zoomControl: true, scrollWheelZoom: true }).setView([34.3, -111.7], 7);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -163,6 +166,7 @@ function initMap() {
   L.control.layers(null, overlays, { collapsed: true }).addTo(map);
 
   loadLiveMapData();
+  requestAnimationFrame(() => map.invalidateSize());
 }
 
 async function loadLiveMapData() {

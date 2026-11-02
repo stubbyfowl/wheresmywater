@@ -552,6 +552,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 }
 .flood-ts { font: 400 .8125rem/1 var(--sans); color: var(--ink-faint); }
 
+.flood-map-section { max-width: 82rem; }
 .flood-section-head { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
 .flood-section-head .band-lede { margin-bottom: 0; }
 .flood-full-map { display: inline-flex; align-items: center; gap: .375rem; text-decoration: none; white-space: nowrap; }
@@ -568,7 +569,7 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
 .flood-live-dot[data-state="loading"] { animation: flood-pulse 1.25s ease-in-out infinite; }
 .flood-map-status .flood-ts { margin-left: auto; }
 .flood-map-frame { position: relative; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-.flood-map { height: clamp(22rem, 55vh, 38rem); background: var(--surface-2); }
+.flood-map { height: clamp(34rem, 72vh, 52rem); background: var(--surface-2); }
 .flood-map-fallback { margin: 0; padding: 2rem; font: 400 1rem/1.5 var(--sans); color: var(--ink-soft); }
 .flood-map-legend {
   position: absolute; z-index: 500; left: .75rem; bottom: 1.5rem; display: flex; gap: .5rem 1rem; flex-wrap: wrap;
@@ -625,9 +626,13 @@ button { font: 600 1rem/1 var(--sans); cursor: pointer; border-radius: var(--rad
   .site-header { justify-content: center; padding: .75rem 1rem; }
   .site-header nav { justify-content: center; }
   .lookup button[type="submit"] { flex: 1 1 100%; }
+  .flood-map-section { padding-left: 0; padding-right: 0; }
+  .flood-section-head, .flood-map-status, .flood-map-note, .flood-map-text { margin-left: 1.5rem; margin-right: 1.5rem; }
   .flood-map-status .flood-ts { width: 100%; margin-left: 0; }
   .flood-full-map { width: 100%; justify-content: center; }
-  .flood-map-legend { bottom: 1.25rem; }
+  .flood-map-frame { border-right: 0; border-left: 0; border-radius: 0; }
+  .flood-map { height: max(36rem, 72svh); }
+  .flood-map-legend { bottom: 1.25rem; left: 1rem; max-width: calc(100% - 2rem); }
   .viol-row { gap: 1.25rem; }
 }
 
