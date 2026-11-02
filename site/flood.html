@@ -49,7 +49,7 @@
   <nav aria-label="Main">
     <a href="index.html#browse">Browse</a>
     <a href="index.html#guide">What to do</a>
-    <a href="flood.html">Flood</a>
+    <a href="flood.html" aria-current="page">Flood</a>
     <a href="about.html">About</a>
     <a href="add.html">Add a source</a>
     <a href="data.html">Data sources</a>
@@ -62,7 +62,7 @@
   <section class="hero">
     <div class="hero-inner">
       <h1>Arizona flood alerts</h1>
-      <p class="lede">Check whether your area has an active flood warning, see what the streams are doing, and know what to do.</p>
+      <p class="lede">Check your location for active National Weather Service alerts, then use the live statewide map to see alert areas and nearby stream gages.</p>
 
       <form id="flood-lookup" class="lookup" novalidate>
         <label for="flood-address">Your address or town</label>
@@ -91,19 +91,35 @@
 
   <div id="flood-point-results" class="flood-results" aria-live="polite"></div>
 
-  <div class="flood-toolbar">
-    <span id="flood-updated" class="flood-ts"></span>
-    <button type="button" id="flood-refresh" class="btn-outline btn-sm">Refresh</button>
-  </div>
-
   <!-- B. Statewide map -->
-  <section class="band">
-    <h2>Statewide flood map</h2>
-    <p class="band-lede">Active NWS flood alerts (polygons), USGS stream gages (circles), and optional FEMA mapped flood zones. Click any feature for details.</p>
-    <div id="flood-map" class="flood-map" role="application" aria-label="Arizona flood map" tabindex="0"></div>
+  <section class="band flood-map-section" aria-labelledby="flood-map-heading">
+    <div class="flood-section-head">
+      <div>
+        <h2 id="flood-map-heading">Live Arizona flood map</h2>
+        <p class="band-lede">Live National Weather Service alert areas and USGS stream-gage readings. Turn on FEMA mapped flood zones for long-term floodplain context.</p>
+      </div>
+      <a class="btn-outline flood-full-map" href="https://afws.org/" target="_blank" rel="noopener">Open Arizona Flood Warning System <span aria-hidden="true">↗</span></a>
+    </div>
+
+    <div class="flood-map-status" aria-live="polite">
+      <span class="flood-live-dot" aria-hidden="true"></span>
+      <span id="flood-map-status">Loading live statewide data…</span>
+      <button type="button" id="flood-refresh" class="btn-outline btn-sm">Refresh map</button>
+      <span id="flood-updated" class="flood-ts"></span>
+    </div>
+    <div class="flood-map-frame">
+      <div id="flood-map" class="flood-map" role="application" aria-label="Interactive live Arizona flood map. Use the layer control to show stream gages or FEMA flood zones." tabindex="0">
+        <p class="flood-map-fallback">Loading the live map…</p>
+      </div>
+      <div class="flood-map-legend" aria-label="Map legend">
+        <span><i class="map-key map-key-alert" aria-hidden="true"></i>Active flood alert</span>
+        <span><i class="map-key map-key-gage" aria-hidden="true"></i>USGS stream gage</span>
+      </div>
+    </div>
+    <p class="flood-map-note">Map data is live and can change quickly. A map is not a road-safety clearance—follow closures and emergency directions.</p>
 
     <details class="flood-map-text">
-      <summary>Text list of active alerts and notable gages</summary>
+      <summary>Read active flood alerts as text</summary>
       <div id="flood-alert-list"></div>
     </details>
   </section>

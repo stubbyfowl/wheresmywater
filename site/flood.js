@@ -111,12 +111,25 @@ let map, markerLayer, alertLayer, gageLayer, femaLayer;
 let gageData = null;
 const zoneCache = new Map();
 
+function setMapStatus(message, tone = "loading") {
+  const el = document.getElementById("flood-map-status");
+  const dot = document.querySelector(".flood-live-dot");
+  if (el) el.textContent = message;
+  if (dot) dot.dataset.state = tone;
+}
+
 function initMap() {
   if (map) return;
   const el = document.getElementById("flood-map");
   if (!el) return;
 
-  map = L.map(el, { zoomControl: true }).setView([34.3, -111.7], 7);
+  if (!window.L) {
+    el.innerHTML = '<p class="flood-map-fallback">The interactive map could not load. <a href="https://afws.org/" target="_blank" rel="noopener">Open the Arizona Flood Warning System ↗</a></p>';
+    setMapStatus("Live map unavailable — use the Arizona Flood Warning System link.", "error");
+    return;
+  }
+
+  map = L.map(el, { zoomControl: true, scrollWheelZoom: true }).setView([34.3, -111.7], 7);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
@@ -124,7 +137,7 @@ function initMap() {
   }).addTo(map);
 
   alertLayer = L.layerGroup().addTo(map);
-  gageLayer = L.layerGroup();
+  gageLayer = L.layerGroup().addTo(map);
   markerLayer = L.layerGroup().addTo(map);
 
   femaLayer = L.tileLayer(
@@ -145,26 +158,35 @@ function initMap() {
 
   const overlays = {
     "USGS stream gages": gageLayer,
-    "FEMA flood zones (static)": femaLayer,
+    "FEMA mapped flood zones": femaLayer,
   };
   L.control.layers(null, overlays, { collapsed: true }).addTo(map);
 
-  map.on("zoomend", () => {
-    if (map.getZoom() >= 8 && !map.hasLayer(gageLayer)) map.addLayer(gageLayer);
-  });
+  loadLiveMapData();
+}
 
-  loadStateAlerts();
-  loadGages();
+async function loadLiveMapData() {
+  setMapStatus("Refreshing live statewide data…", "loading");
+  const results = await Promise.allSettled([loadStateAlerts(), loadGages()]);
+  const alertOk = results[0].status === "fulfilled";
+  const gageOk = results[1].status === "fulfilled";
+  if (alertOk && gageOk) setMapStatus("Live statewide data loaded", "ready");
+  else if (alertOk || gageOk) setMapStatus("Some live map data is unavailable. Try refreshing.", "warning");
+  else setMapStatus("Live map data is unavailable. Try refreshing or use AFWS.", "error");
+  const ts = document.getElementById("flood-updated");
+  if (ts) ts.textContent = `Updated ${fmtNow()} MST`;
 }
 
 async function loadStateAlerts() {
   try {
-    const url = `${NWS_AZ}&event=${FLOOD_EVENTS.map(encodeURIComponent).join(",")}`;
+    // The NWS endpoint's event filter is single-value; fetch Arizona alerts
+    // and filter locally so every flood alert type is represented.
+    const url = NWS_AZ;
     const data = await cached(url, { Accept: "application/geo+json" });
     alertLayer.clearLayers();
     const textList = [];
 
-    for (const f of data.features || []) {
+    for (const f of (data.features || []).filter((feature) => FLOOD_EVENTS.includes(feature.properties?.event))) {
       const p = f.properties;
       const color = SEVERITY_COLOR[p.event] || "#999";
       const popup = `<strong>${esc(p.event)}</strong><br>${esc(p.headline || "")}<br><em>Expires ${fmtTime(p.expires)}</em>${p.instruction ? "<br>" + esc(p.instruction).slice(0, 300) : ""}`;
@@ -192,8 +214,11 @@ async function loadStateAlerts() {
     }
 
     renderAlertList(textList);
+    return textList.length;
   } catch (e) {
     console.warn("Could not load statewide alerts", e);
+    renderAlertList([]);
+    throw e;
   }
 }
 
@@ -226,6 +251,7 @@ async function drawZone(url, color, popup) {
 async function loadGages() {
   try {
     const data = await cached(USGS_GAGES);
+    gageLayer.clearLayers();
     gageData = [];
     const ts = data.value?.timeSeries || [];
     const sites = new Map();
@@ -277,8 +303,10 @@ async function loadGages() {
       marker.addTo(gageLayer);
       gageData.push(site);
     }
+    return gageData.length;
   } catch (e) {
     console.warn("Could not load USGS gages", e);
+    throw e;
   }
 }
 
@@ -313,7 +341,7 @@ function startRefresh() {
   refreshTimer = setInterval(() => {
     if (document.hidden) return;
     if (currentLat != null) doPointLookup(currentLat, currentLon, true);
-    loadStateAlerts();
+    loadLiveMapData();
   }, 120_000);
 }
 
@@ -382,7 +410,7 @@ function init() {
 
   document.getElementById("flood-refresh")?.addEventListener("click", () => {
     if (currentLat != null) doPointLookup(currentLat, currentLon);
-    loadStateAlerts();
+    loadLiveMapData();
   });
 
   // Check for preloaded lat/lon from query string
