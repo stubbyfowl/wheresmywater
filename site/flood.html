@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arizona flood alerts and safety | Where's My Water</title>
+<meta name="description" content="Live NWS flood alerts for your Arizona address, a statewide flood map with USGS stream gages, and what to do before, during and after a flood.">
+<link rel="icon" href="/favicon.ico" sizes="32x32 48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1268c3">
+<link rel="canonical" href="https://wheresmywater.org/flood.html">
+<meta property="og:title" content="Arizona flood alerts and safety | Where's My Water">
+<meta property="og:description" content="Live NWS flood alerts for your Arizona address, a statewide flood map with USGS stream gages, and what to do before, during and after a flood.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wheresmywater.org/flood.html">
+<meta property="og:image" content="https://wheresmywater.org/icon-192.png">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+      integrity="sha256-tXCrvaljxgtN5LT/Syb5Mm9T+yzPFGH98JVcoJT7JTk="
+      crossorigin="anonymous" referrerpolicy="no-referrer">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+        integrity="sha256-XJrs/DDkVkUZ29zdzFOkGCJ9zHVo5hnpdi3c7HYJ7Uc="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "What should I do if I see water on the road while driving in Arizona?", "acceptedAnswer": {"@type": "Answer", "text": "Turn around. Do not drive, walk or ride through floodwater. Under Arizona's A.R.S. 28-910, drivers who go around barricades into flooded roadways can be charged for the cost of their rescue."}},
+    {"@type": "Question", "name": "Is my drinking water safe after a flood in Arizona?", "acceptedAnswer": {"@type": "Answer", "text": "If you are on a public water system, check with your provider for boil-water notices. If you have a private well that was flooded or near floodwater, do not drink from it until it has been disinfected and tested. Use bottled or hauled water from a tested source in the meantime."}},
+    {"@type": "Question", "name": "Where can I check for flood alerts in Arizona?", "acceptedAnswer": {"@type": "Answer", "text": "This page shows live National Weather Service flood alerts for any Arizona address. You can also check weather.gov/psr (Phoenix area) and weather.gov/fgz (northern Arizona) directly."}},
+    {"@type": "Question", "name": "What is Arizona's Stupid Motorist Law?", "acceptedAnswer": {"@type": "Answer", "text": "A.R.S. 28-910 allows authorities to charge drivers for the cost of emergency response if they drive around barricades to enter a flooded roadway and require rescue."}}
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+
+<header class="site-header">
+  <a class="brand" href="index.html">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Where's My Water</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="index.html#browse">Browse</a>
+    <a href="index.html#guide">What to do</a>
+    <a href="flood.html">Flood</a>
+    <a href="about.html">About</a>
+    <a href="add.html">Add a source</a>
+    <a href="data.html">Data sources</a>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- A. Live alerts for address -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Arizona flood alerts</h1>
+      <p class="lede">Check whether your area has an active flood warning, see what the streams are doing, and know what to do.</p>
+
+      <form id="flood-lookup" class="lookup" novalidate>
+        <label for="flood-address">Your address or town</label>
+        <div class="lookup-row">
+          <div class="combo" role="combobox" aria-expanded="false"
+               aria-owns="flood-suggestions" aria-haspopup="listbox">
+            <input
+              id="flood-address"
+              name="address"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="Start typing an address or town"
+              required
+              aria-autocomplete="list"
+              aria-controls="flood-suggestions">
+            <ul id="flood-suggestions" class="suggestions" role="listbox"
+                aria-label="Address suggestions" hidden></ul>
+          </div>
+          <button type="submit" id="flood-submit">Check alerts</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <div id="flood-point-results" class="flood-results" aria-live="polite"></div>
+
+  <div class="flood-toolbar">
+    <span id="flood-updated" class="flood-ts"></span>
+    <button type="button" id="flood-refresh" class="btn-outline btn-sm">Refresh</button>
+  </div>
+
+  <!-- B. Statewide map -->
+  <section class="band">
+    <h2>Statewide flood map</h2>
+    <p class="band-lede">Active NWS flood alerts (polygons), USGS stream gages (circles), and optional FEMA mapped flood zones. Click any feature for details.</p>
+    <div id="flood-map" class="flood-map" role="application" aria-label="Arizona flood map" tabindex="0"></div>
+
+    <details class="flood-map-text">
+      <summary>Text list of active alerts and notable gages</summary>
+      <div id="flood-alert-list"></div>
+    </details>
+  </section>
+
+  <!-- Link-out cards for non-API sources -->
+  <section class="band band-alt">
+    <h2>More live flood data</h2>
+    <div class="places" style="margin-top:1rem">
+      <div class="place">
+        <h3>Maricopa County rain and stream gages</h3>
+        <p class="what">5-minute updates from the Flood Control District's ALERT network.</p>
+        <p><a href="https://alert.fcd.maricopa.gov/alert/Google/v3/gmap.html" rel="noopener">Open ALERT map &#8599;</a></p>
+      </div>
+      <div class="place">
+        <h3>Arizona Flood Warning System</h3>
+        <p class="what">Statewide automated flood detection network.</p>
+        <p><a href="https://afws.org" rel="noopener">Open AFWS &#8599;</a></p>
+      </div>
+      <div class="place">
+        <h3>Pima County Regional Flood Control</h3>
+        <p class="what">Stream flow, rain gauges and flood risk info for the Tucson metro.</p>
+        <p><a href="https://rfcd.pima.gov/" rel="noopener">Open RFCD &#8599;</a></p>
+      </div>
+      <div class="place">
+        <h3>Flagstaff and Coconino County</h3>
+        <p class="what">Post-fire flood risk, emergency alerts and preparedness.</p>
+        <p><a href="https://www.coconino.az.gov/2460/Flooding-Information" rel="noopener">Coconino flood info &#8599;</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- C. Scenario guide -->
+  <section class="band">
+    <div class="flood-911">If life is in danger, call 911.</div>
+    <h2>What to do</h2>
+
+    <div class="guide-grid">
+      <details class="guide-item" open>
+        <summary><strong>I'm driving and see water on the road</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li><strong>Turn around, don't drown.</strong> Six inches of moving water can knock a person down. Twelve inches can carry a vehicle.</li>
+            <li>Do not drive around barricades. Under Arizona's
+            <a href="https://www.azleg.gov/viewdocument/?docName=https://www.azleg.gov/ars/28/00910.htm" rel="noopener">A.R.S. 28-910</a>
+            (the "Stupid Motorist Law"), drivers who enter a flooded roadway past barricades or barriers can be charged for the cost of their rescue.</li>
+            <li>If your car stalls in water, get out and move to higher ground immediately if you can do so safely. Do not stay in a vehicle that is being swept away.</li>
+            <li>Report road closures and flooding via
+            <a href="https://az511.com" rel="noopener">AZ511</a> or 511 from any phone.</li>
+          </ol>
+          <p class="guide-dont"><strong>Do not:</strong> attempt to gauge water depth by looking at it. Floodwater hides washed-out pavement, open manholes, downed power lines and debris.</p>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>A flash flood warning was just issued for my area</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>Move immediately to higher ground. Do not wait for instructions if you are near a wash, creek or low-lying area.</li>
+            <li>Avoid washes, drainage channels, canyons and any areas that channel water, even if they are currently dry.</li>
+            <li>If indoors and on high ground, stay there. Monitor
+            <a href="https://www.weather.gov/psr/" rel="noopener">NWS Phoenix</a> or
+            <a href="https://www.weather.gov/fgz/" rel="noopener">NWS Flagstaff</a> and local radio for updates.</li>
+            <li>Have a plan to leave quickly: shoes on, phone charged, important documents in a bag.</li>
+          </ol>
+          <p class="guide-then"><strong>Then:</strong> warnings typically last 2-6 hours. Wait for the warning to expire or for official all-clear before returning to low areas.</p>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>I'm in a wash, canyon, trail or slot canyon</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li><strong>Go to high ground immediately.</strong> Rain miles upstream can send a wall of water through a dry canyon under clear skies.</li>
+            <li>Move up and away from the channel, not downstream. Climb the sides if possible.</li>
+            <li>In a slot canyon, there is often no high ground. Get out entirely by the quickest route. If you cannot get out, climb as high as you can.</li>
+            <li>Check the forecast before entering any canyon or wash. If there is any chance of rain in the watershed, do not enter.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>Water is coming into my house or yard</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>If you can safely reach the electrical panel, turn off the main breaker. <strong>Do not wade through standing water to reach it</strong> as it may be electrified from downed lines or submerged outlets.</li>
+            <li>Move to a higher floor or higher ground if water is rising inside.</li>
+            <li>If you have sandbags or barriers, place them at door thresholds and garage entries. Even towels or plastic sheeting can slow water entry.</li>
+            <li>Move valuables and documents above the expected water line.</li>
+            <li>Photograph damage for insurance before cleaning up.</li>
+          </ol>
+          <p class="guide-then"><strong>Then:</strong> contact your insurance company. Standard homeowners policies do not cover flood damage. If you have NFIP or private flood insurance, file a claim promptly.</p>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>I need to evacuate</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>Follow your county's <strong>Ready, Set, Go</strong> levels: Ready = be aware; Set = be prepared to leave; Go = leave now.</li>
+            <li>Grab your go bag: medications, IDs, phone charger, water, cash, important documents.</li>
+            <li>Bring pets. Most Red Cross shelters do not accept animals, but your county emergency management can direct you to pet-friendly options.</li>
+            <li>If you do not have a place to go, call
+            <a href="https://211arizona.org/" rel="noopener">211 Arizona</a> for shelter information.</li>
+            <li>Follow your county emergency management's official channels for evacuation routes. Do not take shortcuts through low-lying areas.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>After the flood: is my drinking water safe?</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li><strong>City or utility water:</strong> check with your provider for boil-water notices.
+            <a href="index.html">Search your address</a> on the main page to find your provider's safety record and contact info.</li>
+            <li><strong>Private well:</strong> if floodwater reached or came near your well, do not drink from it. The well casing, cap and seal may have been compromised. Follow
+            <a href="https://www.cdc.gov/healthy-water/emergency-disinfection/emergency-disinfection-drinking-water.html" rel="noopener">CDC guidance</a>
+            on well disinfection, and test with an
+            <a href="https://www.azdhs.gov/preparedness/epidemiology-disease-control/environmental-services/index.php#laboratory" rel="noopener">ADHS-licensed lab</a>
+            before using the water again.</li>
+            <li><strong>Hauled water:</strong> use a hauler from <a href="index.html">this directory</a> and ask whether they draw from a tested public system.</li>
+            <li>Use bottled water for drinking and cooking until you have confirmed your source is safe.</li>
+          </ol>
+          <p class="guide-then"><strong>Then:</strong> even after water recedes, bacteria, chemicals and sediment can persist. If water looks, smells or tastes different, do not assume it will clear on its own.</p>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>I live in a burn scar area</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>After a wildfire, burned ground repels water and dramatically increases flood and debris-flow risk. Even light or moderate rain on a burn scar can trigger dangerous flows.</li>
+            <li>Risk is highest in the first two years after a fire, but can persist longer depending on recovery.</li>
+            <li>Sign up for your county's emergency alert system. The NWS issues <strong>Flash Flood Warnings</strong> specifically for burn scar areas when rain is expected.</li>
+            <li>Have a plan to evacuate on short notice. Debris flows move faster than most people can run.</li>
+            <li>For current burn scar flood risk assessments, contact your county flood control district or check with the
+            <a href="https://dema.az.gov/" rel="noopener">Arizona Division of Emergency Management</a>.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="guide-item">
+        <summary><strong>I'm renting or don't know my flood risk</strong></summary>
+        <div class="guide-body">
+          <ol>
+            <li>Check your flood zone on the
+            <a href="https://msc.fema.gov/" rel="noopener">FEMA Flood Map Service Center</a>. Enter your address to see whether you are in a mapped flood hazard area.</li>
+            <li>Ask your landlord whether the property has flood insurance. Standard renters insurance does <strong>not</strong> cover flood damage to your belongings.</li>
+            <li>You can buy your own flood insurance policy through the
+            <a href="https://www.floodsmart.gov/" rel="noopener">National Flood Insurance Program</a> or private insurers. There is typically a 30-day waiting period before coverage begins.</li>
+            <li>Even outside a mapped flood zone, flooding can happen anywhere it rains. Low-lying areas near washes are particularly vulnerable in Arizona.</li>
+          </ol>
+        </div>
+      </details>
+    </div>
+
+    <p class="caveat" style="margin-top:1.5rem">
+      This is general guidance assembled from public sources, not legal,
+      medical or engineering advice. When something here conflicts with what
+      your county, emergency officials, or a licensed professional tells you
+      about your specific situation, follow their instructions.
+    </p>
+  </section>
+
+  <!-- D. Resources -->
+  <section class="band band-alt">
+    <h2>Emergency contacts and resources</h2>
+    <div class="resource-grid">
+      <div class="resource-group">
+        <h3>Emergency</h3>
+        <dl class="resource-list">
+          <dt>Life-threatening emergency</dt><dd><a href="tel:911">911</a></dd>
+          <dt>211 Arizona (shelter, assistance)</dt><dd><a href="tel:211">211</a> or <a href="https://211arizona.org/" rel="noopener">211arizona.org &#8599;</a></dd>
+          <dt>Arizona Division of Emergency Management</dt><dd><a href="https://dema.az.gov/" rel="noopener">dema.az.gov &#8599;</a></dd>
+        </dl>
+      </div>
+
+      <div class="resource-group">
+        <h3>Weather offices</h3>
+        <dl class="resource-list">
+          <dt>NWS Phoenix</dt><dd><a href="https://www.weather.gov/psr/" rel="noopener">weather.gov/psr &#8599;</a></dd>
+          <dt>NWS Flagstaff</dt><dd><a href="https://www.weather.gov/fgz/" rel="noopener">weather.gov/fgz &#8599;</a></dd>
+          <dt>NWS Tucson</dt><dd><a href="https://www.weather.gov/twc/" rel="noopener">weather.gov/twc &#8599;</a></dd>
+        </dl>
+      </div>
+
+      <div class="resource-group">
+        <h3>County flood control</h3>
+        <dl class="resource-list">
+          <dt>Maricopa County</dt><dd><a href="https://www.maricopa.gov/614/Flood-Control-District" rel="noopener">Flood Control District &#8599;</a></dd>
+          <dt>Pima County</dt><dd><a href="https://rfcd.pima.gov/" rel="noopener">Regional Flood Control &#8599;</a></dd>
+          <dt>Yavapai County</dt><dd><a href="https://www.yavapai.us/flooding" rel="noopener">Flood information &#8599;</a></dd>
+          <dt>Coconino County</dt><dd><a href="https://www.coconino.az.gov/2460/Flooding-Information" rel="noopener">Flood information &#8599;</a></dd>
+        </dl>
+      </div>
+
+      <div class="resource-group">
+        <h3>Roads</h3>
+        <dl class="resource-list">
+          <dt>Road closures and conditions</dt><dd><a href="https://az511.com" rel="noopener">AZ511 &#8599;</a> or call 511</dd>
+        </dl>
+      </div>
+
+      <div class="resource-group">
+        <h3>Power outages</h3>
+        <dl class="resource-list">
+          <dt>APS</dt><dd><a href="tel:18556882437">(855) 688-2437</a></dd>
+          <dt>SRP</dt><dd><a href="tel:16022364833">(602) 236-4833</a></dd>
+          <dt>TEP (Tucson)</dt><dd><a href="tel:15207458000">(520) 745-8000</a></dd>
+          <dt>UNS Electric</dt><dd><a href="tel:18777404401">(877) 740-4401</a></dd>
+          <dt>EPCOR</dt><dd><a href="tel:18003837734">(800) 383-7734</a></dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <p class="disclaimer">
+      <strong>About this page:</strong> Flood alerts and stream gage readings
+      are fetched live from the
+      <a href="https://www.weather.gov/" rel="noopener">National Weather Service</a>
+      and <a href="https://waterdata.usgs.gov/" rel="noopener">USGS</a>. Data may be
+      delayed or incomplete. This is not a substitute for official emergency
+      communications. Follow instructions from local emergency officials.
+      In an emergency, call 911.
+    </p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">Where's My Water</span>
+        </a>
+        <p class="footer-tag">
+          A free directory of where to get water in Arizona, who supplies it,
+          and whether that water has been safe.
+        </p>
+        <p class="footer-loc">Arizona</p>
+      </div>
+
+      <nav class="footer-col" aria-label="Find water">
+        <h2>Find water</h2>
+        <ul>
+          <li><a href="index.html">Search an address</a></li>
+          <li><a href="providers.html">All providers</a></li>
+          <li><a href="index.html#browse">Browse every source</a></li>
+          <li><a href="index.html#guide">What to do</a></li>
+          <li><a href="flood.html">Flood alerts</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-col" aria-label="This directory">
+        <h2>This directory</h2>
+        <ul>
+          <li><a href="about.html">Why this exists</a></li>
+          <li><a href="data.html">Data sources</a></li>
+          <li><a href="add.html">Add or correct a source</a></li>
+        </ul>
+      </nav>
+
+      <div class="footer-col">
+        <h2>Official resources</h2>
+        <ul>
+          <li><a href="https://www.azwater.gov/" rel="noopener">Dept. of Water Resources<span class="ext" aria-hidden="true">&#8599;</span></a></li>
+          <li><a href="https://azdeq.gov/" rel="noopener">ADEQ, drinking water<span class="ext" aria-hidden="true">&#8599;</span></a></li>
+          <li><a href="https://echo.epa.gov/trends/comparative-maps-dashboards/drinking-water-dashboard" rel="noopener">EPA water dashboard<span class="ext" aria-hidden="true">&#8599;</span></a></li>
+          <li><a href="https://www.epa.gov/ccr" rel="noopener">Your yearly quality report<span class="ext" aria-hidden="true">&#8599;</span></a></li>
+          <li><a href="https://211arizona.org/" rel="noopener">211 Arizona, assistance<span class="ext" aria-hidden="true">&#8599;</span></a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h2>Contact</h2>
+        <ul>
+          <li><a href="add.html">Get in touch</a></li>
+          <li><a href="add.html">Submit a correction</a></li>
+        </ul>
+        <p class="footer-note">
+          If your water is out right now, call your county emergency
+          management office. This site is not an emergency service.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="disclaimer">
+        <strong>Please read:</strong> This is an independent project, not a
+        government service, and it is not affiliated with or endorsed by any
+        water utility or agency. Information is gathered from public records
+        and research and can be incomplete or out of date. Always call a
+        water source before relying on it, and verify anything important with
+        the provider or agency directly.
+      </p>
+      <p class="colophon">
+        &copy; 2026 Where's My Water. Data from ADWR, the EPA, and the
+        U.S. Census Bureau. Community-mapped water points &copy;
+        <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap contributors</a>,
+        <a href="https://opendatacommons.org/licenses/odbl/" rel="noopener">ODbL</a>.
+        <a href="privacy.html">Privacy</a> &middot;
+        <a href="terms.html">Terms</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="flood.js"></script>
+</body>
+</html>

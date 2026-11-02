@@ -31,6 +31,7 @@
   <nav aria-label="Main">
     <a href="index.html#browse">Browse</a>
     <a href="index.html#guide">What to do</a>
+    <a href="flood.html">Flood</a>
     <a href="about.html">About</a>
     <a href="add.html">Add a source</a>
     <a href="data.html">Data sources</a>
@@ -207,6 +208,55 @@
         sharp edge in the geology. Subsidence is generally irreversible but
         can be slowed or stopped by reducing pumping. Being outside a mapped
         area does not mean the ground is stable.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Flood alerts</h2>
+      <p class="src">National Weather Service (NWS) alerts API</p>
+      <p>
+        Active flood watches, warnings and advisories for a searched location
+        and statewide, fetched live from the NWS
+        <code>api.weather.gov/alerts</code> endpoint. Alert polygons and zone
+        geometries are drawn on the map when available.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> alerts reflect what the NWS has issued as of
+        the moment you load the page. They may lag behind fast-moving storms,
+        and zone-based alerts cover broad areas that may not apply to your
+        exact location.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Stream gages</h2>
+      <p class="src">USGS National Water Information System (NWIS)</p>
+      <p>
+        Real-time streamflow and gage-height readings from USGS monitoring
+        stations across Arizona, fetched live from the NWIS instantaneous
+        values service. Stations with readings older than three hours are
+        flagged as potentially stale.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> not every wash or river has a gage. Rural
+        washes in particular are often ungaged, so the absence of a reading
+        does not mean the absence of flow.
+      </p>
+    </article>
+
+    <article class="datasrc">
+      <h2>Flood hazard zones</h2>
+      <p class="src">FEMA National Flood Hazard Layer (NFHL)</p>
+      <p>
+        Mapped flood hazard zones from FEMA's National Flood Insurance
+        Program, displayed as a WMS overlay. These are the same zones used for
+        flood insurance rate determinations.
+      </p>
+      <p class="limits">
+        <strong>Limits:</strong> FEMA maps are regulatory products, not
+        real-time flood predictions. They reflect modeled risk, not current
+        conditions, and some areas have not been restudied in decades. A
+        location outside a mapped zone can still flood.
       </p>
     </article>
 

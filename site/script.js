@@ -814,6 +814,44 @@ function render(r) {
   });
 }
 
+/* ---------- flood alert tie-in ---------- */
+
+const FLOOD_EVENTS = [
+  "Flash Flood Emergency", "Flash Flood Warning", "Flood Warning",
+  "Flood Advisory", "Flash Flood Watch", "Flood Watch",
+];
+
+async function checkFloodAlerts(lat, lon, label, lookupResult) {
+  try {
+    const url = `https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lon.toFixed(4)}`;
+    const r = await fetch(url, { headers: { Accept: "application/geo+json" } });
+    if (!r.ok) return;
+    const data = await r.json();
+    const floods = (data.features || []).filter(
+      (f) => FLOOD_EVENTS.includes(f.properties.event)
+    );
+    if (!floods.length) return;
+    const banner = document.createElement("div");
+    banner.className = "flood-banner";
+    banner.innerHTML = `<strong>${esc(floods[0].properties.event)}</strong> active for this area.
+      <a href="flood.html?lat=${lat}&lon=${lon}&q=${encodeURIComponent(label)}">See flood details</a>`;
+    const matched = results.querySelector(".matched");
+    if (matched) matched.after(banner);
+
+    // If no provider (well user) or provider has violations, add water safety note
+    if (!lookupResult.provider || (lookupResult.violations && lookupResult.violations.health_based > 0)) {
+      const note = document.createElement("p");
+      note.className = "caveat";
+      note.style.marginTop = ".75rem";
+      note.innerHTML = `After a flood, check your water. <a href="flood.html?lat=${lat}&lon=${lon}&q=${encodeURIComponent(label)}#after-flood">Drinking water safety after flooding</a>`;
+      const providerSection = results.querySelector(".tier:nth-child(2)");
+      if (providerSection) providerSection.appendChild(note);
+    }
+  } catch {
+    // NWS check is non-critical; fail silently
+  }
+}
+
 /* ---------- events ---------- */
 
 function setBusy(on, message) {
@@ -850,8 +888,10 @@ async function onSubmit(e) {
         throw err;
       }
     }
-    render(lookup(loc, d));
+    const r = lookup(loc, d);
+    render(r);
     results.scrollIntoView({ behavior: "smooth", block: "start" });
+    checkFloodAlerts(loc.lat, loc.lon, loc.matched || address, r);
   } catch (err) {
     const msg =
       err.message === "no-match"
